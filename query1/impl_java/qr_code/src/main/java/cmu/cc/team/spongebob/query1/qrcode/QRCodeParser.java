@@ -107,7 +107,7 @@ public class QRCodeParser {
             }
         }
 
-        return null;
+        throw new QRParsingException();
     }
 
     BinarySquare messageToBinarySquare(String message, boolean encrypt) {

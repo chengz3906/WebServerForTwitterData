@@ -48,4 +48,12 @@ class ServletTest extends Mockito {
 
         assertEquals("CC Team is awesome!", stringWriter.toString());
     }
+
+    @Test
+    void testCaching() throws Exception {
+        for (int i = 0; i < 100; i++) {
+            testQRCodeEncode();
+            testQRCodeDecode();
+        }
+    }
 }

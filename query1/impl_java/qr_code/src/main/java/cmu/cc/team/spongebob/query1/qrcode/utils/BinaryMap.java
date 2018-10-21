@@ -4,12 +4,12 @@ import java.nio.ByteBuffer;
 import java.util.BitSet;
 
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
 
 
 public class BinaryMap {
-    private final @Getter
-    BitSet bitSet;
     private final @Getter int size;
+    private BitSet bitSet;
 
     public BinaryMap(int size) {
         this.size = size;
@@ -68,23 +68,68 @@ public class BinaryMap {
         return str.toString();
     }
 
-    public static BinaryMap valueOf(String string) {
-        return new BinaryMap(0);
+    public static BinaryMap valueOf(String string, int size) {
+        String[] tokens = StringUtils.splitByWholeSeparator(string, "0x");
+        ByteBuffer byteBuffer = ByteBuffer.allocate(4 * tokens.length);
+
+        for (int i = 0; i < tokens.length; i++) {
+            int fourByte = (int) Long.parseLong(tokens[i], 16);
+
+            if (i == (tokens.length - 1) && (size * size) % 32 != 0) {
+                    int leftShift = 32 - ((size * size) % 32);
+                    fourByte = fourByte << leftShift;
+            }
+
+            byteBuffer.putInt(i * 4, fourByte);
+        }
+
+        BitSet bits = BigEndianBitSet.valueOf(byteBuffer.array());
+
+        return new BinaryMap(size, bits);
+    }
+
+    public String toStringBinaryMap() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                if (getBit(i, j)) {
+                    sb.append('1');
+                } else {
+                    sb.append('0');
+                }
+                sb.append(' ');
+            }
+            sb.append('\n');
+        }
+        return sb.toString();
+    }
+
+    public void rotate(int degree) {
+        for (int i = 0; i < degree / 90; i++) {
+            rotate90();
+        }
+    }
+
+    private void rotate90() {
+        int i = bitSet.nextSetBit(0);
+        BitSet rotated = new BitSet(size * size);
+
+        while (i != -1) {
+            int r = i / size;
+            int c = i % size;
+
+            int rRot = size - 1 - c;
+            rotated.set(rRot * size + r);
+
+            i = bitSet.nextSetBit(i + 1);
+        }
+
+        this.bitSet = rotated;
     }
 
     public void print() {
         System.out.println("start");
-        for (int i = 0; i < size; i++) {
-            for (int j = 0; j < size; j++) {
-                if (getBit(i, j)) {
-                    System.out.print('1');
-                } else {
-                    System.out.print('0');
-                }
-                System.out.print(' ');
-            }
-            System.out.println();
-        }
+        System.out.println(this.toStringBinaryMap());
         System.out.println("end");
     }
 }

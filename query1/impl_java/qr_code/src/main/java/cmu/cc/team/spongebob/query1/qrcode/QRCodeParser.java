@@ -50,7 +50,18 @@ public class QRCodeParser {
         DECODE_LOG_MAP = buildEncodeLogisticMap(32);
     }
 
-    public String encode(String message, boolean encrypt) {
+    public String encodeToString(String message, boolean encrypt) {
+        BinaryMap qrCode = encodeToBinaryMap(message, encrypt);
+
+        return qrCode.toString();
+    }
+
+
+    public String decodeToString(String qrCode) {
+        return "";
+    }
+
+    BinaryMap encodeToBinaryMap(String message, boolean encrypt) {
         BinaryMap qrCode;
 
         if (message.length() <= 13) {
@@ -65,18 +76,21 @@ public class QRCodeParser {
         putPayload(qrCode, payload);
 
         if (encrypt) {
-           if (qrCode.getSize() == 21) {
-               qrCode.xor(ENCODE_LOG_MAP_V1);
-           } else {
-               qrCode.xor(ENCODE_LOG_MAP_V2);
-           }
+            if (qrCode.getSize() == 21) {
+                qrCode.xor(ENCODE_LOG_MAP_V1);
+            } else {
+                qrCode.xor(ENCODE_LOG_MAP_V2);
+            }
         }
 
-        return qrCode.toString();
+        return qrCode;
     }
 
-    public String decode(String qrCode) {
-        return "";
+    BinaryMap decodeToBinaryMap(String message, int size) {
+        BinaryMap qrCode = BinaryMap.valueOf(message, size);
+        qrCode.print();
+
+        return qrCode;
     }
 
     ArrayList<Byte> messageToQRPayload(String message) {

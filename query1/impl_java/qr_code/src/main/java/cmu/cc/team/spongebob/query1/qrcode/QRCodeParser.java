@@ -1,11 +1,12 @@
 package cmu.cc.team.spongebob.query1.qrcode;
 
 import cmu.cc.team.spongebob.query1.qrcode.utils.BigEndianBitSet;
-import cmu.cc.team.spongebob.query1.qrcode.utils.BinaryMap;
+import cmu.cc.team.spongebob.query1.qrcode.utils.BinarySquare;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.ListIterator;
 import java.util.Scanner;
@@ -18,8 +19,8 @@ public class QRCodeParser {
     /**
      * QR code templates.
      */
-    private final BinaryMap QR_V1_TEMPLATE;
-    private final BinaryMap QR_V2_TEMPLATE;
+    private final BinarySquare QR_V1_TEMPLATE;
+    private final BinarySquare QR_V2_TEMPLATE;
 
     /**
      * sequences of coordinates that describes how to put a payload.
@@ -30,15 +31,17 @@ public class QRCodeParser {
     /**
      * logistic maps.
      */
-    private final BinaryMap ENCODE_LOG_MAP_V1;
-    private final BinaryMap ENCODE_LOG_MAP_V2;
-    private final BinaryMap DECODE_LOG_MAP;
+    private final BinarySquare ENCODE_LOG_MAP_V1;
+    private final BinarySquare ENCODE_LOG_MAP_V2;
+    private final BinarySquare DECODE_LOG_MAP;
 
     /**
      * padding for QR payload.
      */
     private final BitSet QR_PAYLOAD_PAD = BigEndianBitSet.valueOf(
             new byte[]{(byte) 0b11101100, (byte) 0b00010001});
+
+    public class QRParsingException extends Exception {}
 
     public QRCodeParser() {
         QR_V1_TEMPLATE = loadQRCodeTemplate(21);
@@ -50,74 +53,155 @@ public class QRCodeParser {
         DECODE_LOG_MAP = buildEncodeLogisticMap(32);
     }
 
-    public String encodeToString(String message, boolean encrypt) {
-        BinaryMap qrCode = encodeToBinaryMap(message, encrypt);
-
+    public String encode(String message, boolean encrypt) {
+        BinarySquare qrCode = messageToBinaryMap(message, encrypt);
         return qrCode.toString();
     }
 
+    public String decode(String encryptedHexString) throws QRParsingException {
+        BinarySquare qrCode = hexStringToBinaryMap(encryptedHexString, 32);
+        qrCode.xor(DECODE_LOG_MAP); // decrypt
 
-    public String decodeToString(String qrCode) {
-        return "";
-    }
+        qrCode.print();  // TODO remove after testing
 
-    BinaryMap encodeToBinaryMap(String message, boolean encrypt) {
-        BinaryMap qrCode;
+        // check all possible start locations
+        // TODO use caching
+        for (int size: Arrays.asList(21, 25)) {
+            for (int i = 0; i <= 32 - size; i++) {
+                for (int j = 0; j <= 32 - size; j++) {
+                    BinarySquare slice = qrCode.slice(i, j, size);
 
-        if (message.length() <= 13) {
-            qrCode = new BinaryMap(21);
-            qrCode.add(QR_V1_TEMPLATE);
-        } else {
-            qrCode = new BinaryMap(25);
-            qrCode.add(QR_V2_TEMPLATE);
-        }
+                    // check all rotations
+                    for (int k = 0; k < 3; k++) {
+                        slice.rotate(90);
 
-        ArrayList<Byte> payload = messageToQRPayload(message);
-        putPayload(qrCode, payload);
+                        BinarySquare sliceCopy = slice.clone();
+                        sliceCopy.and(getQRTemplateBySize(size));
+                        if (sliceCopy.equals(getQRTemplateBySize(size))) {
+                            System.out.println("found!");
+                            slice.print();
 
-        if (encrypt) {
-            if (qrCode.getSize() == 21) {
-                qrCode.xor(ENCODE_LOG_MAP_V1);
-            } else {
-                qrCode.xor(ENCODE_LOG_MAP_V2);
+                            byte[] payload = getQRPayload(slice);
+                            return qrPayloadToMessage(payload);
+                        }
+                    }
+                }
             }
         }
 
+        return "null";
+    }
+
+    BinarySquare messageToBinaryMap(String message, boolean encrypt) {
+        BinarySquare binarySquare;
+
+        if (message.length() <= 13) {
+            binarySquare = new BinarySquare(21);
+            binarySquare.add(QR_V1_TEMPLATE);
+        } else {
+            binarySquare = new BinarySquare(25);
+            binarySquare.add(QR_V2_TEMPLATE);
+        }
+
+        byte[] payload = messageToQRPayload(message);
+        putQRPayload(binarySquare, payload);
+
+        if (encrypt) {
+            if (binarySquare.getSize() == 21) {
+                binarySquare.xor(ENCODE_LOG_MAP_V1);
+            } else {
+                binarySquare.xor(ENCODE_LOG_MAP_V2);
+            }
+        }
+
+        return binarySquare;
+    }
+
+    BinarySquare hexStringToBinaryMap(String hexString, int size) {
+        BinarySquare qrCode = BinarySquare.valueOf(hexString, size);
+        qrCode.print(); // TODO remove after testing
+
         return qrCode;
     }
 
-    BinaryMap decodeToBinaryMap(String message, int size) {
-        BinaryMap qrCode = BinaryMap.valueOf(message, size);
-        qrCode.print();
-
-        return qrCode;
-    }
-
-    ArrayList<Byte> messageToQRPayload(String message) {
-        ArrayList<Byte> payload = new ArrayList<>();
+    byte[] messageToQRPayload(String message) {
+        byte[] payload = new byte[message.length() * 2 + 1];
 
         // message length
-        payload.add((new Integer(message.length()).byteValue()));
+        payload[0] = new Integer(message.length()).byteValue();
 
         for (int i = 0; i < message.length(); i++) {
             byte character = (byte) message.charAt(i);
             byte errorCode = errorCode(character);
-            payload.add(character);
-            payload.add(errorCode);
+            payload[2 * i + 1] = character;
+            payload[2 * i + 2] = errorCode;
         }
 
         return payload;
     }
 
-    private void putPayload(BinaryMap template, ArrayList<Byte> payload) {
-        BinaryMap payloadQRCode;
+    String qrPayloadToMessage(byte[] qrPayload) throws QRParsingException {
+        int strLen = qrPayload[0];
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < strLen; i++) {
+            byte c = qrPayload[i * 2 + 1];
+            sb.append((char) c);
+
+            if (errorCode(c) != qrPayload[2 * i + 2]) {
+                throw new QRParsingException();
+            }
+        }
+        return sb.toString();
+    }
+
+    int readQRCodePayloadLength(BinarySquare qrCode) {
+        ArrayList<ImmutablePair<Integer, Integer>> zigZagFill = getZigzagFillBySize(qrCode.getSize());
+
+        BitSet bits = new BitSet(8);
+        for (int i = 0; i < 8; i++) {
+            int r = zigZagFill.get(i).getLeft();
+            int c = zigZagFill.get(i).getRight();
+
+            if (qrCode.getBit(r, c)) {
+                bits.set(i);
+            }
+        }
+
+        return (int) BigEndianBitSet.toByte(bits);
+    }
+
+    byte[] getQRPayload(BinarySquare qrCode) {
+        ArrayList<ImmutablePair<Integer, Integer>> zigZagFill =
+                getZigzagFillBySize(qrCode.getSize());
+
+        int payloadBitLength = readQRCodePayloadLength(qrCode) * 2 * 8 + 8;
+
+        BitSet payloadBits = new BitSet(payloadBitLength);
+        for (int i = 0; i < payloadBitLength; i++) {
+            ImmutablePair<Integer, Integer> coord = zigZagFill.get(i);
+            if (qrCode.getBit(coord.getLeft(), coord.getRight())) {
+                payloadBits.set(i);
+            }
+        }
+
+        byte[] payload = new byte[payloadBitLength / 8];
+        byte[] bytes = BigEndianBitSet.toByteArray(payloadBits);
+        // toByteArray does not include trailing 0's
+        System.arraycopy(bytes, 0, payload, 0, bytes.length);
+
+       return payload;
+    }
+
+    private void putQRPayload(BinarySquare template, byte[] payload) {
+        BinarySquare payloadQRCode;
         ArrayList<ImmutablePair<Integer, Integer>> zigzag;
 
         if (template.getSize() == 21) {
-            payloadQRCode = new BinaryMap(21);
+            payloadQRCode = new BinarySquare(21);
             zigzag = ZIGZAG_V1;
         } else {
-            payloadQRCode = new BinaryMap(25);
+            payloadQRCode = new BinarySquare(25);
             zigzag = ZIGZAG_V2;
         }
 
@@ -132,7 +216,7 @@ public class QRCodeParser {
         }
 
         ListIterator<ImmutablePair<Integer, Integer>> coordsToFill =
-                zigzag.listIterator(payload.size() * 8);
+                zigzag.listIterator(payload.length * 8);
 
         // keep writing the sequence of 11101100 00010001
         int i = 0;
@@ -147,13 +231,10 @@ public class QRCodeParser {
         }
 
         template.add(payloadQRCode);
-
-        // TODO remove after test
-        // template.print();
     }
 
-    private BinaryMap loadQRCodeTemplate(int size) {
-        BinaryMap template = new BinaryMap(size);
+    private BinarySquare loadQRCodeTemplate(int size) {
+        BinarySquare template = new BinarySquare(size);
 
         ClassLoader classLoader = getClass().getClassLoader();
         File file;
@@ -208,7 +289,7 @@ public class QRCodeParser {
         return zigzag;
     }
 
-    private BinaryMap buildEncodeLogisticMap(int size) {
+    private BinarySquare buildEncodeLogisticMap(int size) {
         int logisticMapSize = (size * size) / 8 + 1;
         byte[] logisticMap = new byte[logisticMapSize];
 
@@ -220,7 +301,23 @@ public class QRCodeParser {
             logisticMap[i] = (byte) Math.floor(xi * 255);
         }
 
-        return new BinaryMap(size, BitSet.valueOf(logisticMap)); // bit-level little-endian
+        return new BinarySquare(size, BitSet.valueOf(logisticMap)); // bit-level little-endian
+    }
+
+    private BinarySquare getQRTemplateBySize(int size) {
+        if (size == 21) {
+            return QR_V1_TEMPLATE;
+        }
+
+        return QR_V2_TEMPLATE;
+    }
+
+    private ArrayList<ImmutablePair<Integer, Integer>> getZigzagFillBySize(int size) {
+        if (size == 21) {
+            return ZIGZAG_V1;
+        }
+
+        return ZIGZAG_V2;
     }
 
     private byte errorCode(byte b) {

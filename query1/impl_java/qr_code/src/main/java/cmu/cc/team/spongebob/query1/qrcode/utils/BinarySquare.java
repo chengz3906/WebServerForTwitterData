@@ -7,17 +7,17 @@ import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 
 
-public class BinaryMap {
+public class BinarySquare {
     private final @Getter int size;
     private BitSet bitSet;
 
-    public BinaryMap(int size) {
+    public BinarySquare(int size) {
         this.size = size;
         int length = size * size;
-        bitSet = new BigEndianBitSet(length);
+        bitSet = new BitSet(length);
     }
 
-    public BinaryMap(int size, BitSet bitset) {
+    public BinarySquare(int size, BitSet bitset) {
         this.bitSet = bitset;
         int length = size * size;
 
@@ -38,18 +38,26 @@ public class BinaryMap {
         return bitSet.get(ind);
     }
 
-    public void add(BinaryMap another) {
+    public BinarySquare clone() {
+        return new BinarySquare(size, (BitSet) bitSet.clone());
+    }
+
+    public void add(BinarySquare another) {
         bitSet.or(another.bitSet);
     }
 
-    public void xor(BinaryMap another) {
+    public void xor(BinarySquare another) {
         bitSet.xor(another.bitSet);
+    }
+
+    public void and(BinarySquare another) {
+        bitSet.and(another.bitSet);
     }
 
     public String toString() {
         StringBuilder str = new StringBuilder();
 
-        byte[] bytes = bitSet.toByteArray();
+        byte[] bytes = BigEndianBitSet.toByteArray(bitSet);
         for (int i = 0; i <= (bytes.length / 4); i++) {
             str.append("0x");
 
@@ -68,7 +76,11 @@ public class BinaryMap {
         return str.toString();
     }
 
-    public static BinaryMap valueOf(String string, int size) {
+    public boolean equals(BinarySquare another) {
+        return this.size == another.size && this.bitSet.equals(another.bitSet);
+    }
+
+    public static BinarySquare valueOf(String string, int size) {
         String[] tokens = StringUtils.splitByWholeSeparator(string, "0x");
         ByteBuffer byteBuffer = ByteBuffer.allocate(4 * tokens.length);
 
@@ -85,7 +97,7 @@ public class BinaryMap {
 
         BitSet bits = BigEndianBitSet.valueOf(byteBuffer.array());
 
-        return new BinaryMap(size, bits);
+        return new BinarySquare(size, bits);
     }
 
     public String toStringBinaryMap() {
@@ -110,6 +122,27 @@ public class BinaryMap {
         }
     }
 
+    public BinarySquare slice(int rowStart, int colStart, int sliceSize) {
+        BitSet slice =  new BitSet(sliceSize * sliceSize);
+
+        int firstInd = rowStart * this.size + colStart;
+        int lastInd = (rowStart + sliceSize - 1) * this.size + colStart + sliceSize;
+
+        int setBitInd = bitSet.nextSetBit(firstInd);
+        while (setBitInd != -1 && setBitInd < lastInd) {
+            int r = setBitInd / size - rowStart;
+            int c = setBitInd % size - colStart;
+
+            if (r >= 0 &&  c >= 0 && r < sliceSize && c < sliceSize) {
+                slice.set(r * sliceSize + c);
+            }
+
+            setBitInd = bitSet.nextSetBit(setBitInd + 1);
+        }
+
+        return new BinarySquare(sliceSize, slice);
+    }
+
     private void rotate90() {
         int i = bitSet.nextSetBit(0);
         BitSet rotated = new BitSet(size * size);
@@ -128,8 +161,6 @@ public class BinaryMap {
     }
 
     public void print() {
-        System.out.println("start");
         System.out.println(this.toStringBinaryMap());
-        System.out.println("end");
     }
 }

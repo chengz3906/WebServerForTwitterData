@@ -35,6 +35,6 @@ public class QRCodeServlet extends HttpServlet {
         }
 
         PrintWriter out = response.getWriter();
-        out.println(resp);
+        out.print(resp);
     }
 }

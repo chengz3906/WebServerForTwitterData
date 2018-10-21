@@ -76,6 +76,10 @@ public class BinarySquare {
         return str.toString();
     }
 
+    public void clear() {
+        bitSet.clear();
+    }
+
     public boolean equals(BinarySquare another) {
         return this.size == another.size && this.bitSet.equals(another.bitSet);
     }
@@ -100,28 +104,50 @@ public class BinarySquare {
         return new BinarySquare(size, bits);
     }
 
-    public String toStringBinaryMap() {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < size; i++) {
-            for (int j = 0; j < size; j++) {
-                if (getBit(i, j)) {
-                    sb.append('1');
-                } else {
-                    sb.append('0');
-                }
-                sb.append(' ');
-            }
-            sb.append('\n');
+    /**
+     * rotate 90 degree in place.
+     */
+    public void rotate90() {
+        int i = bitSet.nextSetBit(0);
+        BitSet rotated = new BitSet(size * size);
+
+        while (i != -1) {
+            int r = i / size;
+            int c = i % size;
+
+            int rRot = size - 1 - c;
+            rotated.set(rRot * size + r);
+
+            i = bitSet.nextSetBit(i + 1);
         }
-        return sb.toString();
+
+        this.bitSet = rotated;
     }
 
-    public void rotate(int degree) {
-        for (int i = 0; i < degree / 90; i++) {
-            rotate90();
+    public void cachedRotate90(BinarySquare cache) {
+        int i = bitSet.nextSetBit(0);
+        BitSet rotated = new BitSet(size * size);
+
+        while (i != -1) {
+            int r = i / size;
+            int c = i % size;
+
+            int rRot = size - 1 - c;
+            cache.bitSet.set(rRot * size + r);
+
+            i = bitSet.nextSetBit(i + 1);
         }
+
+        this.bitSet = rotated;
     }
 
+    /**
+     * Slice from binary square.
+     * @param rowStart row starting index
+     * @param colStart column starting index
+     * @param sliceSize sliced binary square size
+     * @return a new binary slice
+     */
     public BinarySquare slice(int rowStart, int colStart, int sliceSize) {
         BitSet slice =  new BitSet(sliceSize * sliceSize);
 
@@ -143,21 +169,37 @@ public class BinarySquare {
         return new BinarySquare(sliceSize, slice);
     }
 
-    private void rotate90() {
-        int i = bitSet.nextSetBit(0);
-        BitSet rotated = new BitSet(size * size);
+    public void cachedSlice(int rowStart, int colStart, int sliceSize, BinarySquare cached) {
+        int firstInd = rowStart * this.size + colStart;
+        int lastInd = (rowStart + sliceSize - 1) * this.size + colStart + sliceSize;
 
-        while (i != -1) {
-            int r = i / size;
-            int c = i % size;
+        int setBitInd = bitSet.nextSetBit(firstInd);
+        while (setBitInd != -1 && setBitInd < lastInd) {
+            int r = setBitInd / size - rowStart;
+            int c = setBitInd % size - colStart;
 
-            int rRot = size - 1 - c;
-            rotated.set(rRot * size + r);
+            if (r >= 0 &&  c >= 0 && r < sliceSize && c < sliceSize) {
+                cached.bitSet.set(r * sliceSize + c);
+            }
 
-            i = bitSet.nextSetBit(i + 1);
+            setBitInd = bitSet.nextSetBit(setBitInd + 1);
         }
+    }
 
-        this.bitSet = rotated;
+    public String toStringBinaryMap() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                if (getBit(i, j)) {
+                    sb.append('1');
+                } else {
+                    sb.append('0');
+                }
+                sb.append(' ');
+            }
+            sb.append('\n');
+        }
+        return sb.toString();
     }
 
     public void print() {

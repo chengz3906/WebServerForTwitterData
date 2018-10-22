@@ -13,6 +13,7 @@ import javax.servlet.http.HttpServletResponse;
 
 
 public class QRCodeServlet extends HttpServlet {
+    public static final int MAX_CACHE_SIZE = 200000;
     private QRCodeParser parser;
     private ConcurrentHashMap<String, String> encodeCache;
     private ConcurrentHashMap<String, String> decodeCache;
@@ -47,6 +48,14 @@ public class QRCodeServlet extends HttpServlet {
                 }
                 decodeCache.put(message, resp);
             }
+        }
+
+        if (encodeCache.size() == MAX_CACHE_SIZE) {
+            encodeCache.clear();
+        }
+
+        if (decodeCache.size() == MAX_CACHE_SIZE) {
+            decodeCache.clear();
         }
 
         PrintWriter out = response.getWriter();

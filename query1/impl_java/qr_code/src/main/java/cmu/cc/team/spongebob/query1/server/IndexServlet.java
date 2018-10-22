@@ -14,6 +14,6 @@ public class IndexServlet extends HttpServlet {
             throws ServletException, IOException {
         response.setContentType("text/html");
         PrintWriter out = response.getWriter();
-        out.println("<h1>" + "CC Team Phase 1 QR Code with Cache" + "</h1>");
+        out.println("<h1>" + "CC Team Phase 1 QR Code with fixed-size Cache" + "</h1>");
     }
 }

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-sudo apt-get update
+sudo apt-get -y update
 sudo apt-get -y install default-jdk
 
 sudo update-java-alternatives -l
@@ -12,7 +12,7 @@ tar xf apace-tomcat.tar.gz
 sudo mv -f apache-tomcat-8.5.34 /usr/local
 
 # change port to 80
-sed -i -- 's/8080/80/g' server.xml
+sed -i -- 's/8080/80/g' /usr/local/apache-tomcat-8.5.34/conf/server.xml
 
 # deploy war
 sudo rm -r /usr/local/apache-tomcat-8.5.34/webapps/ROOT

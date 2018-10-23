@@ -1,4 +1,4 @@
-package cmu.cc.team.spongebob.query1.server;
+package cmu.cc.team.spongebob.query1.servlet;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -13,6 +13,6 @@ public class HeartBeatServlet extends HttpServlet {
     public void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         PrintWriter out = response.getWriter();
-        out.println("server ready");
+        out.println("service ready");
     }
 }

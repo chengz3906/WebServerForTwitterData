@@ -7,19 +7,19 @@
     <display-name>QRCode Servlet</display-name>
     <servlet>
         <servlet-name>QRCodeServlet</servlet-name>
-        <servlet-class>cmu.cc.team.spongebob.query1.server.QRCodeServlet</servlet-class>
+        <servlet-class>cmu.cc.team.spongebob.query1.servlet.QRCodeServlet</servlet-class>
         <load-on-startup>1</load-on-startup>
     </servlet>
 
     <servlet>
         <servlet-name>HeartBeatServlet</servlet-name>
-        <servlet-class>cmu.cc.team.spongebob.query1.server.HeartBeatServlet</servlet-class>
+        <servlet-class>cmu.cc.team.spongebob.query1.servlet.HeartBeatServlet</servlet-class>
         <load-on-startup>3</load-on-startup>
     </servlet>
 
     <servlet>
         <servlet-name>IndexServlet</servlet-name>
-        <servlet-class>cmu.cc.team.spongebob.query1.server.IndexServlet</servlet-class>
+        <servlet-class>cmu.cc.team.spongebob.query1.servlet.IndexServlet</servlet-class>
         <load-on-startup>2</load-on-startup>
     </servlet>
 

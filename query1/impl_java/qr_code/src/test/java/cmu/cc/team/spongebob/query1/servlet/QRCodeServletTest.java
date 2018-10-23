@@ -1,5 +1,6 @@
-package cmu.cc.team.spongebob.query1.server;
+package cmu.cc.team.spongebob.query1.servlet;
 
+import cmu.cc.team.spongebob.query1.utils.KeyValueLRUCache;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -11,7 +12,7 @@ import java.io.StringWriter;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
-class ServletTest extends Mockito {
+class QRCodeServletTest extends Mockito {
     @Test
     void testQRCodeEncode() throws Exception {
         QRCodeServlet  qrCodeServlet = new QRCodeServlet();
@@ -50,10 +51,40 @@ class ServletTest extends Mockito {
     }
 
     @Test
-    void testCaching() throws Exception {
-        for (int i = 0; i < 100; i++) {
+    void testLoad() throws Exception {
+        final long startTime = System.currentTimeMillis();
+        for (int i = 0; i < 10000; i++) {
             testQRCodeEncode();
+            KeyValueLRUCache.getInstance().reset();
             testQRCodeDecode();
+            KeyValueLRUCache.getInstance().reset();
         }
+        final long endTime = System.currentTimeMillis();
+
+        System.out.println("Total execution time: " + (endTime - startTime) + "ms");
+    }
+
+    @Test
+    void testEncodeLoad() throws Exception {
+        final long startTime = System.currentTimeMillis();
+        for (int i = 0; i < 10000; i++) {
+            testQRCodeEncode();
+            KeyValueLRUCache.getInstance().reset();
+        }
+        final long endTime = System.currentTimeMillis();
+
+        System.out.println("Total execution time: " + (endTime - startTime) + "ms");
+    }
+
+    @Test
+    void testDecodeLoad() throws Exception {
+        final long startTime = System.currentTimeMillis();
+        for (int i = 0; i < 10000; i++) {
+            testQRCodeDecode();
+            KeyValueLRUCache.getInstance().reset();
+        }
+        final long endTime = System.currentTimeMillis();
+
+        System.out.println("Total execution time: " + (endTime - startTime) + "ms");
     }
 }

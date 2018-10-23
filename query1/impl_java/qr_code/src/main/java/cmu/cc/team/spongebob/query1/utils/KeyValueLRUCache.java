@@ -6,7 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 
 public class KeyValueLRUCache {
-    private static final int MAX_ITEM_NUMBER = 200000;
+    private static final int MAX_ITEM_NUMBER = 200000;  // TODO read max item number from a config file
 
     private final ConcurrentHashMap<String, String> keyValueStore;
     private final ConcurrentHashMap<Long, String> keyTimestamp;

@@ -13,8 +13,6 @@ import javax.servlet.http.HttpServletResponse;
 
 
 public class QRCodeServlet extends HttpServlet {
-    private static final int MAX_CACHE_SIZE = 200000;
-
     private QRCodeParser parser;
     private KeyValueLRUCache cache;
 
@@ -28,26 +26,33 @@ public class QRCodeServlet extends HttpServlet {
         String type = request.getParameter("type");
         String message = request.getParameter("data");
 
-        String requestID = String.format("q1/type=%s&data=%s", type, message);
+        String requestKey = String.format("q1/type=%s&data=%s", type, message);
 
         // look for it in key value store
-        String resp = cache.get(requestID);
+        String resp = cache.get(requestKey);
+        PrintWriter out = response.getWriter();
 
         if (resp == null) {
-            if (type.equals("encode")) {
-                resp = parser.encode(message, true);
-            } else if (type.equals("decode")) {
-                try {
-                    resp = parser.decode(message);
-                } catch (QRCodeParser.QRParsingException e) {
-                    resp = "decoding error";
-                }
-            }
+            resp = executeQRCodeRequest(type, message);
+            out.print(resp);
 
-            cache.put(requestID, resp);
+            cache.put(requestKey, resp);
+        } else {
+            out.print(resp);
         }
+    }
 
-        PrintWriter out = response.getWriter();
-        out.print(resp);
+    private String executeQRCodeRequest(String type, String message) {
+        String result = "";
+        if (type.equals("encode")) {
+            result = parser.encode(message, true);
+        } else if (type.equals("decode")) {
+            try {
+                result = parser.decode(message);
+            } catch (QRCodeParser.QRParsingException e) {
+                result = "decoding error";
+            }
+        }
+        return result;
     }
 }

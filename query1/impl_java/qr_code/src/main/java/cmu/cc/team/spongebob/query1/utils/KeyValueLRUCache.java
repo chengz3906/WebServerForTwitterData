@@ -15,10 +15,10 @@ public class KeyValueLRUCache {
     private final long maxItemNumber;
 
     private static KeyValueLRUCache keyValueLRUCache;
-    private static final Object keyValueStoreLock = new Object();
+    private static final Object InstantiationLock = new Object();
 
     public static KeyValueLRUCache getInstance() {
-        synchronized (keyValueStoreLock) {
+        synchronized (InstantiationLock) {
             if (keyValueLRUCache == null) {
                 keyValueLRUCache = new KeyValueLRUCache(MAX_ITEM_NUMBER);
             }

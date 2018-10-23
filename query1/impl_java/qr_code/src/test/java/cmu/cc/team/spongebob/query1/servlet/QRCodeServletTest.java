@@ -55,9 +55,7 @@ class QRCodeServletTest extends Mockito {
         final long startTime = System.currentTimeMillis();
         for (int i = 0; i < 10000; i++) {
             testQRCodeEncode();
-            KeyValueLRUCache.getInstance().reset();
             testQRCodeDecode();
-            KeyValueLRUCache.getInstance().reset();
         }
         final long endTime = System.currentTimeMillis();
 

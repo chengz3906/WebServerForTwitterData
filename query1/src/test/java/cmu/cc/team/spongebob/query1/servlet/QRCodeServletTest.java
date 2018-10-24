@@ -53,7 +53,7 @@ class QRCodeServletTest extends Mockito {
     @Test
     void testLoad() throws Exception {
         final long startTime = System.currentTimeMillis();
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 1000; i++) {
             testQRCodeEncode();
             testQRCodeDecode();
         }
@@ -65,7 +65,7 @@ class QRCodeServletTest extends Mockito {
     @Test
     void testEncodeLoad() throws Exception {
         final long startTime = System.currentTimeMillis();
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 1000; i++) {
             testQRCodeEncode();
             KeyValueLRUCache.getInstance().reset();
         }
@@ -77,7 +77,7 @@ class QRCodeServletTest extends Mockito {
     @Test
     void testDecodeLoad() throws Exception {
         final long startTime = System.currentTimeMillis();
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 1000; i++) {
             testQRCodeDecode();
             KeyValueLRUCache.getInstance().reset();
         }

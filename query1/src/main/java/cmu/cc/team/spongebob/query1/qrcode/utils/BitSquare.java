@@ -76,10 +76,7 @@ public class BitSquare {
         return str.toString();
     }
 
-    public void clear() {
-        bitSet.clear();
-    }
-
+    // TODO optimize the search
     public BitSquare locateAndSlice(final BitSquare pattern) {
         BitSquare window = new BitSquare(pattern.size);
 
@@ -129,10 +126,7 @@ public class BitSquare {
         return new BitSquare(size, bits);
     }
 
-    /**
-     * rotate 90 degree in place.
-     */
-    public void rotate90() {
+    private void rotate90() {
         int i = bitSet.nextSetBit(0);
         BitSet rotated = new BitSet(size * size);
 
@@ -149,52 +143,9 @@ public class BitSquare {
         this.bitSet = rotated;
     }
 
-    public void cachedRotate90(BitSquare cache) {
-        int i = bitSet.nextSetBit(0);
-        BitSet rotated = new BitSet(size * size);
+    private void cachedSlice(int rowStart, int colStart, int sliceSize, BitSquare cache) {
+        cache.clear();
 
-        while (i != -1) {
-            int r = i / size;
-            int c = i % size;
-
-            int rRot = size - 1 - c;
-            cache.bitSet.set(rRot * size + r);
-
-            i = bitSet.nextSetBit(i + 1);
-        }
-
-        this.bitSet = rotated;
-    }
-
-    /**
-     * Slice from binary square.
-     * @param rowStart row starting index
-     * @param colStart column starting index
-     * @param sliceSize sliced binary square size
-     * @return a new binary slice
-     */
-    public BitSquare slice(int rowStart, int colStart, int sliceSize) {
-        BitSet slice =  new BitSet(sliceSize * sliceSize);
-
-        int firstInd = rowStart * this.size + colStart;
-        int lastInd = (rowStart + sliceSize - 1) * this.size + colStart + sliceSize;
-
-        int setBitInd = bitSet.nextSetBit(firstInd);
-        while (setBitInd != -1 && setBitInd < lastInd) {
-            int r = setBitInd / size - rowStart;
-            int c = setBitInd % size - colStart;
-
-            if (r >= 0 &&  c >= 0 && r < sliceSize && c < sliceSize) {
-                slice.set(r * sliceSize + c);
-            }
-
-            setBitInd = bitSet.nextSetBit(setBitInd + 1);
-        }
-
-        return new BitSquare(sliceSize, slice);
-    }
-
-    public void cachedSlice(int rowStart, int colStart, int sliceSize, BitSquare cache) {
         int firstInd = rowStart * this.size + colStart;
         int lastInd = (rowStart + sliceSize - 1) * this.size + colStart + sliceSize;
 
@@ -232,5 +183,9 @@ public class BitSquare {
 
     public void print() {
         System.out.println(this.toStringPretty());
+    }
+
+    private void clear() {
+        bitSet.clear();
     }
 }

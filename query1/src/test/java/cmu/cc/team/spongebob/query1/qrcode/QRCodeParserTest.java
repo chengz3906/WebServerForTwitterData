@@ -1,6 +1,6 @@
 package cmu.cc.team.spongebob.query1.qrcode;
 
-import cmu.cc.team.spongebob.query1.qrcode.utils.BinarySquare;
+import cmu.cc.team.spongebob.query1.qrcode.utils.BitSquare;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 
@@ -73,50 +73,50 @@ class QRCodeParserTest {
     @Test
     void testHexStringToBinaryMap() {
         QRCodeParser encoder = new QRCodeParser();
-        BinarySquare decoded = encoder.hexStringToBinarySquare(CC_TEAM_QR_CODE, 21);
-        BinarySquare expected = encoder.messageToBinarySquare("CC Team", false);
-        assertEquals(decoded.toStringBinaryMap(), expected.toStringBinaryMap());
+        BitSquare decoded = encoder.hexStringToBinarySquare(CC_TEAM_QR_CODE, 21);
+        BitSquare expected = encoder.messageToBinarySquare("CC Team", false);
+        assertEquals(decoded.toStringPretty(), expected.toStringPretty());
 
-        BinarySquare decoded2 = encoder.hexStringToBinarySquare(CC_TEAM_IS_AWESOME_QR_CODE, 25);
-        BinarySquare expected2 = encoder.messageToBinarySquare("CC Team is awesome!", false);
-        assertEquals(decoded2.toStringBinaryMap(), expected2.toStringBinaryMap());
+        BitSquare decoded2 = encoder.hexStringToBinarySquare(CC_TEAM_IS_AWESOME_QR_CODE, 25);
+        BitSquare expected2 = encoder.messageToBinarySquare("CC Team is awesome!", false);
+        assertEquals(decoded2.toStringPretty(), expected2.toStringPretty());
     }
 
     @Test
     void testBinaryMapRotation() {
         QRCodeParser encoder = new QRCodeParser();
-        BinarySquare decoded = encoder.hexStringToBinarySquare(CC_TEAM_QR_CODE, 21);
+        BitSquare decoded = encoder.hexStringToBinarySquare(CC_TEAM_QR_CODE, 21);
 
         printDivider("rotate90 90");
         decoded.rotate90();
-        System.out.println(decoded.toStringBinaryMap());
+        System.out.println(decoded.toStringPretty());
 
         printDivider("rotate90 another 180");
         decoded.rotate90();
-        System.out.println(decoded.toStringBinaryMap());
+        System.out.println(decoded.toStringPretty());
 
         printDivider("rotate90 another 90");
         decoded.rotate90();
-        System.out.println(decoded.toStringBinaryMap());
+        System.out.println(decoded.toStringPretty());
 
         decoded.rotate90();
-        BinarySquare expected = encoder.messageToBinarySquare("CC Team", false);
-        assertEquals(decoded.toStringBinaryMap(), expected.toStringBinaryMap());
+        BitSquare expected = encoder.messageToBinarySquare("CC Team", false);
+        assertEquals(decoded.toStringPretty(), expected.toStringPretty());
     }
 
     @Test
     void testBinaryMapSlice() {
         BitSet bitSet = new BitSet(100);
         bitSet.set(0, 100);
-        BinarySquare binarySquare = new BinarySquare(10, bitSet);
+        BitSquare bitSquare = new BitSquare(10, bitSet);
 
         BitSet expectedBitSet = new BitSet(9);
         expectedBitSet.set(0, 9);
-        BinarySquare expected = new BinarySquare(3, expectedBitSet);
+        BitSquare expected = new BitSquare(3, expectedBitSet);
 
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
-                BinarySquare slice = binarySquare.slice(i, j, 3);
+                BitSquare slice = bitSquare.slice(i, j, 3);
                 printDivider(String.format("(%d, %d)", i, j));
                 slice.print();
                 printDivider("");
@@ -129,15 +129,15 @@ class QRCodeParserTest {
     void testBinaryMapSliceNoMultiple() {
         BitSet bitSet = new BitSet(100);
         bitSet.set(0, 100);
-        BinarySquare binarySquare = new BinarySquare(10, bitSet);
+        BitSquare bitSquare = new BitSquare(10, bitSet);
 
         BitSet expectedBitSet = new BitSet(81);
         expectedBitSet.set(0, 81);
-        BinarySquare expected = new BinarySquare(9, expectedBitSet);
+        BitSquare expected = new BitSquare(9, expectedBitSet);
 
         for (int i = 0; i < 2; i++) {
             for (int j = 0; j < 2; j++) {
-                BinarySquare slice = binarySquare.slice(i, j, 9);
+                BitSquare slice = bitSquare.slice(i, j, 9);
                 printDivider(String.format("(%d, %d)", i, j));
                 slice.print();
                 printDivider("");
@@ -149,8 +149,8 @@ class QRCodeParserTest {
     @Test
     void testQRCodeSlice() {
         QRCodeParser encoder = new QRCodeParser();
-        BinarySquare decoded = encoder.hexStringToBinarySquare(CC_TEAM_QR_CODE, 21);
-        BinarySquare slice = decoded.slice(0, 0, 8);
+        BitSquare decoded = encoder.hexStringToBinarySquare(CC_TEAM_QR_CODE, 21);
+        BitSquare slice = decoded.slice(0, 0, 8);
 
         printDivider("align pattern slice");
         slice.print();
@@ -176,7 +176,7 @@ class QRCodeParserTest {
     void testBinaryMapToQRPayload() {
         QRCodeParser encoder = new QRCodeParser();
 
-        BinarySquare qrCode = encoder.messageToBinarySquare("CC Team", false);
+        BitSquare qrCode = encoder.messageToBinarySquare("CC Team", false);
         qrCode.print();
 
         byte[] expectedPayload = encoder.messageToQRPayload("CC Team");

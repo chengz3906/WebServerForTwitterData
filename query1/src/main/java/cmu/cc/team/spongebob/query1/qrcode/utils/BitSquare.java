@@ -7,17 +7,17 @@ import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 
 
-public class BinarySquare {
+public class BitSquare {
     private final @Getter int size;
     private BitSet bitSet;
 
-    public BinarySquare(int size) {
+    public BitSquare(int size) {
         this.size = size;
         int length = size * size;
         bitSet = new BitSet(length);
     }
 
-    public BinarySquare(int size, BitSet bitset) {
+    public BitSquare(int size, BitSet bitset) {
         this.bitSet = bitset;
         int length = size * size;
 
@@ -38,19 +38,19 @@ public class BinarySquare {
         return bitSet.get(ind);
     }
 
-    public BinarySquare clone() {
-        return new BinarySquare(size, (BitSet) bitSet.clone());
+    public BitSquare clone() {
+        return new BitSquare(size, (BitSet) bitSet.clone());
     }
 
-    public void add(BinarySquare another) {
+    public void add(BitSquare another) {
         bitSet.or(another.bitSet);
     }
 
-    public void xor(BinarySquare another) {
+    public void xor(BitSquare another) {
         bitSet.xor(another.bitSet);
     }
 
-    public void and(BinarySquare another) {
+    public void and(BitSquare another) {
         bitSet.and(another.bitSet);
     }
 
@@ -80,28 +80,53 @@ public class BinarySquare {
         bitSet.clear();
     }
 
-    public boolean equals(BinarySquare another) {
+    public BitSquare locateAndSlice(final BitSquare pattern) {
+        BitSquare window = new BitSquare(pattern.size);
+
+        for (int i = 0; i <= size - pattern.size; i++) {
+            for (int j = 0; j <= size -  pattern.size; j++) {
+                window.clear();
+                cachedSlice(i, j, pattern.size, window);
+
+                // check all rotations
+                for (int k = 0; k <= 3; k++) {
+                    // bit-wise and with the template
+                    BitSquare masked = window.clone();
+                    masked.and(pattern);
+
+                    if (masked.equals(pattern)) { // patterns aligned
+                        return window;
+                    }
+
+                    window.rotate90();
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public boolean equals(BitSquare another) {
         return this.size == another.size && this.bitSet.equals(another.bitSet);
     }
 
-    public static BinarySquare valueOf(String string, int size) {
+    public static BitSquare fromHexString(String string, int size) {
         String[] tokens = StringUtils.splitByWholeSeparator(string, "0x");
         ByteBuffer byteBuffer = ByteBuffer.allocate(4 * tokens.length);
 
         for (int i = 0; i < tokens.length; i++) {
-            int fourByte = (int) Long.parseLong(tokens[i], 16);
+            int fourBytes = (int) Long.parseLong(tokens[i], 16);
 
+            // the last (size * size) % 32 bits are treated as an integer
             if (i == (tokens.length - 1) && (size * size) % 32 != 0) {
                     int leftShift = 32 - ((size * size) % 32);
-                    fourByte = fourByte << leftShift;
+                    fourBytes = fourBytes << leftShift;
             }
-
-            byteBuffer.putInt(i * 4, fourByte);
+            byteBuffer.putInt(i * 4, fourBytes);
         }
 
         BitSet bits = BigEndianBitSet.valueOf(byteBuffer.array());
-
-        return new BinarySquare(size, bits);
+        return new BitSquare(size, bits);
     }
 
     /**
@@ -124,7 +149,7 @@ public class BinarySquare {
         this.bitSet = rotated;
     }
 
-    public void cachedRotate90(BinarySquare cache) {
+    public void cachedRotate90(BitSquare cache) {
         int i = bitSet.nextSetBit(0);
         BitSet rotated = new BitSet(size * size);
 
@@ -148,7 +173,7 @@ public class BinarySquare {
      * @param sliceSize sliced binary square size
      * @return a new binary slice
      */
-    public BinarySquare slice(int rowStart, int colStart, int sliceSize) {
+    public BitSquare slice(int rowStart, int colStart, int sliceSize) {
         BitSet slice =  new BitSet(sliceSize * sliceSize);
 
         int firstInd = rowStart * this.size + colStart;
@@ -166,27 +191,30 @@ public class BinarySquare {
             setBitInd = bitSet.nextSetBit(setBitInd + 1);
         }
 
-        return new BinarySquare(sliceSize, slice);
+        return new BitSquare(sliceSize, slice);
     }
 
-    public void cachedSlice(int rowStart, int colStart, int sliceSize, BinarySquare cached) {
+    public void cachedSlice(int rowStart, int colStart, int sliceSize, BitSquare cache) {
         int firstInd = rowStart * this.size + colStart;
         int lastInd = (rowStart + sliceSize - 1) * this.size + colStart + sliceSize;
 
         int setBitInd = bitSet.nextSetBit(firstInd);
+        int rowInSlice;
+        int colInSlice;
         while (setBitInd != -1 && setBitInd < lastInd) {
-            int r = setBitInd / size - rowStart;
-            int c = setBitInd % size - colStart;
+            rowInSlice = setBitInd / size - rowStart;
+            colInSlice = setBitInd % size - colStart;
 
-            if (r >= 0 &&  c >= 0 && r < sliceSize && c < sliceSize) {
-                cached.bitSet.set(r * sliceSize + c);
+            if (rowInSlice >= 0 &&  colInSlice >= 0
+                    && rowInSlice < sliceSize && colInSlice < sliceSize) {
+                cache.bitSet.set(rowInSlice * sliceSize + colInSlice);
             }
 
             setBitInd = bitSet.nextSetBit(setBitInd + 1);
         }
     }
 
-    public String toStringBinaryMap() {
+    public String toStringPretty() {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
@@ -203,6 +231,6 @@ public class BinarySquare {
     }
 
     public void print() {
-        System.out.println(this.toStringBinaryMap());
+        System.out.println(this.toStringPretty());
     }
 }

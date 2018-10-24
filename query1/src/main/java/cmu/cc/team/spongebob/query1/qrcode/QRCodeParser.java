@@ -14,6 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
 
+// TODO make it a singleton class
 public class QRCodeParser {
     /**
      * QR code templates.

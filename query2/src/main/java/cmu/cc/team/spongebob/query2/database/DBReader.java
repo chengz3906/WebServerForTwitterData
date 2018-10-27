@@ -3,7 +3,7 @@ package cmu.cc.team.spongebob.query2.database;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
-
+import org.apache.commons.dbcp2.BasicDataSource;
 
 public class DBReader {
     /**
@@ -31,30 +31,28 @@ public class DBReader {
     private static final String DB_USER = "root";
     private static final String DB_PWD = "Allen123";
     /**
-     * The connection (session) with the database.
+     * The connection pool with the database.
      */
-    private static Connection conn;
+    private static BasicDataSource ds = new BasicDataSource();
 
-    public DBReader(){
-        try {
-            Class.forName(JDBC_DRIVER);
-            conn = DriverManager.getConnection(URL, DB_USER, DB_PWD);
-        } catch (ClassNotFoundException | SQLException e) {
-            e.printStackTrace();
-        }
+
+    public DBReader() {
+        ds.setDriverClassName(JDBC_DRIVER);
+        ds.setUrl(URL);
+        ds.setUsername(DB_USER);
+        ds.setPassword(DB_PWD);
+        ds.setMinIdle(5);
+        ds.setMaxIdle(20);
     }
 
     public void query(Long userId, String phrase, int n,
                       ArrayList<String> userName, ArrayList<String> userDesc,
                       ArrayList<String> contactTweet) {
-        ArrayList<Long> contactTid = new ArrayList<>();
-        ArrayList<Long> contactUid = new ArrayList<>();
-        HashMap<Long, Contact> contacts;
+        ArrayList<Long> contactIds = new ArrayList<>();
+        HashMap<Long, Contact> contacts = new HashMap<>();
         ArrayList<Contact> filteredContacts;
-        getContacts(userId, contactTid, contactUid);
-        contacts = genContactInfo(contactTid, contactUid, phrase);
-        setIntimacyScore(contacts, userId);
-        filteredContacts = filterContact(contacts, n);
+        getContacts(userId, phrase, contactIds, contacts);
+        filteredContacts = filterContact(contactIds, contacts, n);
         for (Contact contact : filteredContacts) {
             userName.add(contact.getUserName());
             userDesc.add(contact.getUserDescription());
@@ -62,117 +60,68 @@ public class DBReader {
         }
     }
 
-    public void getContacts(Long userId, ArrayList<Long> contactTid,
-                             ArrayList<Long> contactUid) {
+    public void getContacts(Long userId, String phrase,
+                            ArrayList<Long> contactIds,
+                            HashMap<Long, Contact> contacts) {
+        Statement stmt = null;
+        ResultSet rs = null;
         try {
-            String sql = "SELECT in_reply_to_user_id AS uid, tweet_id FROM reply "
-                    + "WHERE user_id=" + userId + " UNION "
-                    + "SELECT user_id AS uid, tweet_id FROM reply "
-                    + "WHERE in_reply_to_user_id=" + userId + " UNION "
-                    + "SELECT retweet_user_id AS uid, tweet_id FROM retweet ";
-            ResultSet rs = executeQuery(sql);
+            String sql = "SELECT uid, tweet_text, intimacy_score, "
+                    + "screen_name, description FROM "
+                    + "(SELECT user2_id AS uid, tweet_text, "
+                    + "intimacy_score, created_at FROM contact_tweet "
+                    + "WHERE user1_id=" + userId + " UNION "
+                    + "SELECT user1_id AS uid, tweet_text, "
+                    + "intimacy_score, created_at FROM contact_tweet "
+                    + "WHERE user2_id=" + userId + ") AS tweet "
+                    + "LEFT JOIN contact_user ON tweet.uid=contact_user.id "
+                    + "ORDER BY uid ASC, created_at DESC";
+            Connection conn = ds.getConnection();
+            stmt = conn.createStatement();
+            rs = stmt.executeQuery(sql);
+            Long lastUid = null;
             while (rs.next()) {
-                contactTid.add(rs.getLong("tweet_id"));
-                contactUid.add(rs.getLong("in_reply_to_user_id"));
-            }
-
-            sql = "SELECT user_id, tweet_id FROM reply "
-                    + "WHERE in_reply_to_user_id=\"" + userId + "\"";
-            rs = executeQuery(sql);
-            while (rs.next()) {
-                contactTid.add(rs.getLong("tweet_id"));
-                contactUid.add(rs.getLong("user_id"));
-            }
-
-            sql = "SELECT retweet_user_id, tweet_id FROM retweet "
-                    + "WHERE user_id=\"" + userId + "\"";
-            rs = executeQuery(sql);
-            while (rs.next()) {
-                contactTid.add(rs.getLong("tweet_id"));
-                contactUid.add(rs.getLong("retweet_user_id"));
-            }
-
-            sql = "SELECT user_id, tweet_id FROM retweet "
-                    + "WHERE retweet_user_id=\"" + userId + "\"";
-            rs = executeQuery(sql);
-            while (rs.next()) {
-                contactTid.add(rs.getLong("tweet_id"));
-                contactUid.add(rs.getLong("user_id"));
+                Long uid = rs.getLong("uid");
+                String text = rs.getString("tweet_text");
+                double intimacyScore = rs.getDouble("intimacy_score");
+                String screenName = rs.getString("screen_name");
+                String desc = rs.getString("description");
+                if (!uid.equals(lastUid)) {
+                    contactIds.add(uid);
+                    contacts.put(uid, new Contact(screenName,
+                            desc, intimacyScore));
+                    lastUid = uid;
+                }
+                contacts.get(uid).addTweet(text, phrase);
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        }
-    }
-
-    public HashMap<Long, Contact> genContactInfo(ArrayList<Long> contactTid,
-                                                    ArrayList<Long> contactUid, String phrase) {
-        HashMap<Long, Contact> contacts = new HashMap<>();
-        String sql;
-        ResultSet rs;
-        try {
-            sql = "SELECT user_id, user_name, user_description "
-                    + "FROM user WHERE user_id IN (";
-            for (Long uid : contactUid) {
-                sql += "\"" + uid + "\",";
-            }
-            sql = sql.substring(0, sql.length()-1) + ") "
-                + "ORDER BY user_id ASC";
-            rs = executeQuery(sql);
-            while (rs.next()) {
-                Long userId = rs.getLong("user_id");
-                String userName = rs.getString("user_name");
-                String userDescription = rs.getString("user_description");
-                contacts.put(userId, new Contact(userId, userName, userDescription));
-            }
-            sql = "SELECT user_id, tweet_id, text, created_at "
-                    + "FROM tweet WHERE tweet_id IN (";
-            for (Long tid : contactTid) {
-                sql += "\"" + tid + "\",";
-            }
-            sql = sql.substring(0, sql.length()-1) + ")";
-            rs = executeQuery(sql);
-            while (rs.next()) {
-                Long userId = rs.getLong("user_id");
-                Long tweetId = rs.getLong("tweet_id");
-                String text = rs.getString("text");
-                Timestamp createdAt = rs.getTimestamp("created_at");
-                contacts.get(userId).addTweet(tweetId, text, createdAt, phrase);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return contacts;
-    }
-
-    public void setIntimacyScore(HashMap<Long, Contact> contacts, Long userId) {
-        String sql;
-        ResultSet rs;
-        Long lid, rid;
-        try {
-            for (Long contactId : contacts.keySet()) {
-                lid = contactId > userId ? userId : contactId;
-                rid = contactId > userId ? contactId : userId;
-                sql = "SELECT intimacy_score FROM intimacy "
-                        +"WHERE user_id_1=\"" + lid + "\" "
-                        +"AND user_id_2=\"" + rid + "\"";
-                rs = executeQuery(sql);
-                while (rs.next()) {
-                    int intimacyScore = rs.getInt("intimacy_score");
-                    contacts.get(contactId).setIntimacyScore(intimacyScore);
+        } finally {
+            if (stmt != null) {
+                try {
+                    stmt.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
                 }
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
+            if (rs != null) {
+                try {
+                    rs.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
-    public ArrayList<Contact> filterContact(HashMap<Long, Contact> contacts, int n) {
+    public ArrayList<Contact> filterContact(ArrayList<Long> contactIds,
+                                            HashMap<Long, Contact> contacts, int n) {
         ArrayList<Contact> filteredContacts = new ArrayList<>();
-        for (Long uid : contacts.keySet()) {
-            int score = contacts.get(uid).getScore();
+        for (Long uid : contactIds) {
+            double score = contacts.get(uid).getScore();
             int index = 0;
             while (index < filteredContacts.size()
-                    && score < filteredContacts.get(index).getScore()) {
+                    && score <= filteredContacts.get(index).getScore()) {
                 index++;
             }
             filteredContacts.add(index, contacts.get(uid));
@@ -183,49 +132,29 @@ public class DBReader {
         return filteredContacts;
     }
 
-    private static ResultSet executeQuery(final String sql) {
-        Statement stmt = null;
-        ResultSet rs = null;
-        try {
-            stmt = conn.createStatement();
-            rs = stmt.executeQuery(sql);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-//        finally {
-//            if (stmt != null) {
-//                try {
-//                    stmt.close();
-//                } catch (SQLException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//        }
-        return rs;
-    }
-
-    private class Contact {
-        private Long userId;
+    public class Contact {
         private String userName;
         private String userDescription;
         private ArrayList<Tweet> tweets;
         private int phraseScore;
-        private int intimacyScore;
+        private double intimacyScore;
         private int targetTweetIndex;
         private int targetTweetCount;
 
-        public Contact(Long userId, String userName, String userDescription) {
-            this.userId = userId;
-            this.userName = userName;
-            this.userDescription = userDescription;
+        public Contact(String userName, String userDescription,
+                       double intimacyScore) {
+            this.userName = userName == null ? "" : userName;
+            this.userDescription = userDescription == null ? ""
+                    : userDescription;
             this.phraseScore = 0;
             this.targetTweetIndex = -1;
             this.targetTweetCount = 0;
+            this.intimacyScore = intimacyScore;
+            this.tweets = new ArrayList<>();
         }
 
-        public void addTweet(Long tweetId, String text,
-                             Timestamp createdAt, String phrase) {
-            Tweet tweet = new Tweet(tweetId, text, createdAt, phrase);
+        public void addTweet(String text, String phrase) {
+            Tweet tweet = new Tweet(text, phrase);
             int phraseCount = tweet.getPhraseCount();
             this.phraseScore += phraseCount;
             if (phraseCount > this.targetTweetCount) {
@@ -238,17 +167,12 @@ public class DBReader {
         public String getTweetText() {
             if (targetTweetIndex >= 0) {
                 return this.tweets.get(targetTweetIndex).getText();
-            }
-            else {
+            } else {
                 return this.tweets.get(0).getText();
             }
         }
 
-        public void setIntimacyScore(int intimacyScore) {
-            this.intimacyScore = intimacyScore;
-        }
-
-        public int getScore() {
+        public double getScore() {
             return intimacyScore * (phraseScore + 1);
         }
 
@@ -261,16 +185,11 @@ public class DBReader {
         }
 
         private class Tweet {
-            private Long tweetId;
             private String text;
-            private Timestamp createdAt;
             private int phraseCount;
 
-            public Tweet(Long tweetId, String text,
-                         Timestamp createdAt, String phrase) {
-                this.tweetId = tweetId;
+            public Tweet(String text, String phrase) {
                 this.text = text;
-                this.createdAt = createdAt;
                 countPhrase(phrase);
             }
 
@@ -279,7 +198,12 @@ public class DBReader {
                 int count = 0;
                 index = text.indexOf(phrase, index);
                 while (index != -1) {
-                    count++;
+                    int lindex = index - 1;
+                    int rindex = index + phrase.length();
+                    if ((lindex < 0 || text.charAt(lindex) == ' ')
+                        && (rindex >= text.length() || text.charAt(rindex) == ' ')) {
+                        count++;
+                    }
                     index += phrase.length();
                     index = text.indexOf(phrase, index);
                 }
@@ -289,6 +213,7 @@ public class DBReader {
             public String getText() {
                 return text;
             }
+
             public int getPhraseCount() {
                 return phraseCount;
             }

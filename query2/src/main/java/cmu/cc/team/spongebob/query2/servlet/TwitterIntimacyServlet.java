@@ -20,6 +20,7 @@ public class TwitterIntimacyServlet extends HttpServlet{
     public void init() {
         dbReader = new DBReader();
     }
+
     public void doGet(HttpServletRequest request, HttpServletResponse response)
         throws ServletException, IOException {
 //        response.setContentType("text/html");

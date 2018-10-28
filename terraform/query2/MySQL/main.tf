@@ -20,25 +20,38 @@ resource "aws_instance" "mysql_server" {
   }
 
   provisioner "remote-exec" {
-//    script = "script.sh"
-    inline = [
-      "sudo apt update",
-      "sudo apt install -y mysql-server",
-      "sudo mysql < config_mysql.sql",
-      "echo '[mysqld]' | sudo tee --append /etc/mysql/mysql.conf.d/mysqld.cnf",
-      "echo 'bind-address = 0.0.0.0' | sudo tee --append /etc/mysql/mysql.conf.d/mysqld.cnf",
-      "echo 'character-set-server = utf8mb4' | sudo tee --append /etc/mysql/mysql.conf.d/mysqld.cnf",
-      "echo 'collation-server = utf8mb4_unicode_ci' | sudo tee --append /etc/mysql/mysql.conf.d/mysqld.cnf",
-      "echo '[client]' | sudo tee --append /etc/mysql/mysql.conf.d/mysqld.cnf",
-      "echo 'default-character-set = utf8mb4' | sudo tee --append /etc/mysql/mysql.conf.d/mysqld.cnf",
-      "echo '[mysql]' | sudo tee --append /etc/mysql/mysql.conf.d/mysqld.cnf",
-      "echo 'default-character-set = utf8mb4' | sudo tee --append /etc/mysql/mysql.conf.d/mysqld.cnf",
-      "sudo service mysql restart"
-    ]
+    script = "script.sh"
+//    inline = [
+//      "sudo apt update",
+//      "sleep 30",
+//      "sudo apt install -y mysql-server",
+//      "sleep 30",
+//      "sudo mysql < config_mysql.sql",
+//      "echo '[mysqld]' | sudo tee --append /etc/mysql/mysql.conf.d/mysqld.cnf",
+//      "echo 'bind-address = 0.0.0.0' | sudo tee --append /etc/mysql/mysql.conf.d/mysqld.cnf",
+//      "echo 'character-set-server = utf8mb4' | sudo tee --append /etc/mysql/mysql.conf.d/mysqld.cnf",
+//      "echo 'collation-server = utf8mb4_unicode_ci' | sudo tee --append /etc/mysql/mysql.conf.d/mysqld.cnf",
+//      "echo '[client]' | sudo tee --append /etc/mysql/mysql.conf.d/mysqld.cnf",
+//      "echo 'default-character-set = utf8mb4' | sudo tee --append /etc/mysql/mysql.conf.d/mysqld.cnf",
+//      "echo '[mysql]' | sudo tee --append /etc/mysql/mysql.conf.d/mysqld.cnf",
+//      "echo 'default-character-set = utf8mb4' | sudo tee --append /etc/mysql/mysql.conf.d/mysqld.cnf",
+//      "sudo service mysql restart"
+//    ]
+  }
+
+  root_block_device {
+    volume_type = "gp2"
+    volume_size = "20"
+    delete_on_termination = "true"
+  }
+
+  volume_tags {
+    Name = "MySQL"
+    Project = "Phase1"
   }
 
   tags {
-    Name = "MySQL test"
+    Name = "MySQL"
     Project = "Phase1"
   }
 }

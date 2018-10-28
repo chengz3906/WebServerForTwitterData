@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 sudo apt update
+sleep 30
 sudo apt install -y mysql-server
+sleep 30
 sudo mysql < config_mysql.sql
-#sudo sed -i -- 's/bind-address/#bind-address/' /etc/mysql/mysql.conf.d/mysqld.cnf
 echo "
 # romote access
 [mysqld]
@@ -16,10 +17,15 @@ bind-address = 0.0.0.0
 default-character-set = utf8mb4
 
 [mysqld]
+character-set-client-handshake = FALSE
 character-set-server = utf8mb4
-collation-server = utf8mb4_unicode_ci
+collation-server = utf8mb4_bin
 
 [mysql]
 default-character-set = utf8mb4
 " | sudo tee --append /etc/mysql/mysql.conf.d/mysqld.cnf
 sudo service mysql restart
+export MYSQL_DB_NAME=twitter
+export MYSQL_DNS=localhost
+export MYSQL_USER=spongebob
+export MYSQL_PWD=15619

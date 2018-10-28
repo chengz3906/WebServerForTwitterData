@@ -5,7 +5,7 @@ variable "ami" {
 
 # instance type
 variable "instance_type" {
-  default = "t2.micro"
+  default = "m5.large"
 }
 
 # ssh key

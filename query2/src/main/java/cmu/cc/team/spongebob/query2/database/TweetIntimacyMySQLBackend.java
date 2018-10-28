@@ -55,7 +55,7 @@ public class TweetIntimacyMySQLBackend {
                         + "WHERE user1_id=? UNION "
                         + "SELECT user1_id AS uid, tweet_text, "
                         + "intimacy_score, created_at FROM contact_tweet "
-                        + "WHERE user2_id=? AS tweet "
+                        + "WHERE user2_id=?) AS tweet "
                         + "LEFT JOIN contact_user ON tweet.uid=contact_user.id "
                         + "ORDER BY uid ASC, created_at DESC";
         try (Connection conn = ds.getConnection();

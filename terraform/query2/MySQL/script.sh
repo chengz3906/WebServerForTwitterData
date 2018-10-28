@@ -25,7 +25,33 @@ collation-server = utf8mb4_bin
 default-character-set = utf8mb4
 " | sudo tee --append /etc/mysql/mysql.conf.d/mysqld.cnf
 sudo service mysql restart
+
+# install tomcat 8
+sudo apt-get install -y tomcat8
+sleep 30
+
+# move our .war
+sudo chown tomcat8:tomcat8 q1.war
+sudo chown tomcat8:tomcat8 q2.war
+sudo mv q1.war /var/lib/tomcat8/webapps/
+sudo mv q2.war /var/lib/tomcat8/webapps/
+
+# set environment variables
+sudo mkdir /var/lib/tomcat8/bin
+echo "
 export MYSQL_DB_NAME=twitter
+export MYSQL_DNS=localhost
 export MYSQL_DNS=localhost
 export MYSQL_USER=spongebob
 export MYSQL_PWD=15619
+" | sudo tee --append /var/lib/tomcat8/bin/setenv.sh
+
+# DANGEROUS
+echo "
+export TEAMID=<TEAMID>
+export TEAM_AWS_ACCOUNT_ID=<AWS_ACCOUNT_ID>
+" | sudo tee --append /var/lib/tomcat8/bin/setenv.sh
+sudo service tomcat restart
+
+# create new databases
+sudo mysql < create_twitter_database.sql

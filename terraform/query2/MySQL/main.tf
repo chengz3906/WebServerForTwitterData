@@ -19,6 +19,21 @@ resource "aws_instance" "mysql_server" {
     destination = "config_mysql.sql"
   }
 
+  provisioner "file" {
+    source = "../../../query1/target/q1.war"
+    destination = "q1.war"
+  }
+
+  provisioner "file" {
+    source = "../../../query2/target/q2.war"
+    destination = "q2.war"
+  }
+
+  provisioner "file" {
+    source = "create_twitter_database.sql"
+    destination = "create_twitter_database.sql"
+  }
+
   provisioner "remote-exec" {
     script = "script.sh"
 //    inline = [

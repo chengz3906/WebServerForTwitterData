@@ -1,5 +1,6 @@
 package cmu.cc.team.spongebob.etl.phase1;
 
+import com.google.common.primitives.Longs;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import lombok.Cleanup;
@@ -30,6 +31,7 @@ public class HBaseETLJob {
         private static final String COL_USER_ID = "id";
         private static final String COL_USER_SCREEN_NAME = "screen_name";
         private static final String COL_USER_DESC = "description";
+        private static final String COL_USER_INTIMACY = "intimacy";
         private static final String COL_TWEET_TEXT = "text";
         private static final String COL_TWEET_CREATED_AT = "created_at";
 
@@ -38,31 +40,46 @@ public class HBaseETLJob {
         public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
             JsonObject rowJSON = jsonParser.parse(value.toString()).getAsJsonObject();
 
-            String user1ID = rowJSON.get("user1_id").getAsString();
+            Long user1ID = rowJSON.get("user1_id").getAsLong();
             String user1ScreenName = rowJSON.get("user1_screen_name").getAsString();
             String user1Description = rowJSON.get("user1_desc").getAsString();
 
-            String user2ID = rowJSON.get("user2_id").getAsString();
+            Long user2ID = rowJSON.get("user2_id").getAsLong();
             String user2ScreenName = rowJSON.get("user2_screen_name").getAsString();
-            String user2Description = rowJSON.get("user2_des").getAsString();
+            String user2Description = rowJSON.get("user2_desc").getAsString();
+            Double intimacyScore = rowJSON.get("intimacy_score").getAsDouble();
 
             String tweetText = rowJSON.get("tweet_text").getAsString();
             String tweetCreatedAt = rowJSON.get("created_at").getAsString();
 
             ImmutableBytesWritable rowKey = new ImmutableBytesWritable(Bytes.toBytes(user1ID));
-            Put put = new Put(user1ID.getBytes());
+            Put put = new Put(Longs.toByteArray(user1ID));
 
             // user1
-            put.addColumn(COLF_USER1.getBytes(), COL_USER_SCREEN_NAME.getBytes(), user1ScreenName.getBytes());
-            put.addColumn(COLF_USER1.getBytes(), COL_USER_DESC.getBytes(), user1Description.getBytes());
+            if (user1ScreenName != null) {
+                put.addColumn(COLF_USER1.getBytes(), COL_USER_SCREEN_NAME.getBytes(), user1ScreenName.getBytes());
+            }
+
+            if (user1Description != null) {
+                put.addColumn(COLF_USER1.getBytes(), COL_USER_DESC.getBytes(), user1Description.getBytes());
+            }
 
             // user2
-            put.addColumn(COLF_USER2.getBytes(), COL_USER_ID.getBytes(), user2ID.getBytes());
-            put.addColumn(COLF_USER2.getBytes(), COL_USER_SCREEN_NAME.getBytes(), user2ScreenName.getBytes());
-            put.addColumn(COLF_USER2.getBytes(), COL_USER_DESC.getBytes(), user2Description.getBytes());
+            put.addColumn(COLF_USER2.getBytes(), COL_USER_ID.getBytes(), Bytes.toBytes(user2ID));
+            put.addColumn(COLF_USER2.getBytes(), COL_USER_INTIMACY.getBytes(), Bytes.toBytes(intimacyScore));
+
+            if (user2ScreenName != null) {
+                put.addColumn(COLF_USER2.getBytes(), COL_USER_SCREEN_NAME.getBytes(), user2ScreenName.getBytes());
+            }
+
+            if (user2Description != null) {
+                put.addColumn(COLF_USER2.getBytes(), COL_USER_DESC.getBytes(), user2Description.getBytes());
+            }
 
             // tweet
-            put.addColumn(COLF_TWEET.getBytes(), COL_TWEET_TEXT.getBytes(), tweetText.getBytes());
+            if (tweetText != null) {
+                put.addColumn(COLF_TWEET.getBytes(), COL_TWEET_TEXT.getBytes(), tweetText.getBytes());
+            }
             put.addColumn(COLF_TWEET.getBytes(), COL_TWEET_CREATED_AT.getBytes(), tweetCreatedAt.getBytes());
 
             context.write(rowKey, put);

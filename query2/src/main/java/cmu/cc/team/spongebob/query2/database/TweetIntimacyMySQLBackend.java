@@ -2,7 +2,8 @@ package cmu.cc.team.spongebob.query2.database;
 
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Collections;
+
 import org.apache.commons.dbcp2.BasicDataSource;
 
 public class TweetIntimacyMySQLBackend {
@@ -49,7 +50,7 @@ public class TweetIntimacyMySQLBackend {
         // Get contact information
         final String sql = String.format(
                 "SELECT uid, tweet_text, intimacy_score, "
-                        + "screen_name, description FROM "
+                        + "screen_name, description, created_at FROM "
                         + "(SELECT user2_id AS uid, tweet_text, "
                         + "intimacy_score, created_at FROM contact_tweet "
                         + "WHERE user1_id=%d UNION "
@@ -69,29 +70,20 @@ public class TweetIntimacyMySQLBackend {
                 double intimacyScore = rs.getDouble("intimacy_score");
                 String screenName = rs.getString("screen_name");
                 String desc = rs.getString("description");
+                String createdAt = rs.getString("created_at");
                 if (uid != lastUid) {
                     contacts.add(new ContactUser(uid, screenName,
                             desc, intimacyScore));
                     lastUid = uid;
                 }
-                contacts.get(contacts.size() - 1).addTweet(text, phrase);
+                contacts.get(contacts.size() - 1).addTweet(text, phrase, createdAt);
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
         // Sort contacts
-        contacts.sort((o1, o2) -> {
-            if (o1.getScore() > o2.getScore()) {
-                return -1;
-            } else if (o1.getScore() < o2.getScore()) {
-                return 1;
-            } else if (o1.getUserId() < o2.getUserId()) {
-                return -1;
-            } else if (o1.getUserId() > o2.getUserId()) {
-                return 1;
-            } else return 0;
-        });
+        Collections.sort(contacts);
         return contacts;
     }
 }

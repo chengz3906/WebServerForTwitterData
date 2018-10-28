@@ -6,13 +6,24 @@ import lombok.Getter;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
-public class ContactTweet {
+public class ContactTweet implements Comparable<ContactTweet> {
     private @Getter String text;
     private @Getter int phraseCount;
+    private @Getter String createdAt;
 
-    public ContactTweet(String text, String phrase) {
+    public ContactTweet(String text, String phrase, String createdAt) {
         this.text = text;
+        this.createdAt = createdAt;
         countPhrase(phrase);
+    }
+
+    @Override
+    public int compareTo(ContactTweet other) {
+        if (this.phraseCount != other.getPhraseCount()) {
+            return this.phraseCount - other.getPhraseCount();
+        } else {
+            return this.createdAt.compareTo(other.getCreatedAt());
+        }
     }
 
     private void countPhrase(String phrase) {

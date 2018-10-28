@@ -36,12 +36,4 @@ public class ContactTweet {
         }
         phraseCount = count;
     }
-//
-//    public String getText() {
-//        return text;
-//    }
-//
-//    public int getPhraseCount() {
-//        return phraseCount;
-//    }
 }

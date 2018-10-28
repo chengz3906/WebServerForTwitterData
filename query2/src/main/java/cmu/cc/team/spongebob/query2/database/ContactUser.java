@@ -55,18 +55,4 @@ public class ContactUser {
         }
         return score;
     }
-
-    /* public String getUserName() {
-        return userName;
-    }
-
-
-    public String getUserDescription() {
-        return userDescription;
-    }
-
-    public Long getUserId() {
-        return userId;
-    }
-    */
 }

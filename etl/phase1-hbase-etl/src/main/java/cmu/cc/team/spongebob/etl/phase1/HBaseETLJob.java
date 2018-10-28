@@ -24,6 +24,11 @@ import java.io.IOException;
 
 
 public class HBaseETLJob {
+    /**
+     * The private IP address of HBase master node.
+     */
+    private static String zkAddr = "172.31.46.38";
+
     public static class BulkLoadMapper extends Mapper<LongWritable, Text, ImmutableBytesWritable, Put> {
         private static final String COLF_USER1 = "user1";
         private static final String COLF_USER2 = "user2";
@@ -91,7 +96,13 @@ public class HBaseETLJob {
         String outputPath = args[1];
 
         Configuration conf = HBaseConfiguration.create();
+        conf.set("hbase.master", zkAddr + ":14000");
+        conf.set("hbase.zookeeper.quorum", zkAddr);
+        conf.set("hbase.zookeeper.property.clientport", "2181");
+        Connection testCon = ConnectionFactory.createConnection(conf);
+
         Job job = Job.getInstance(conf,"Phase1_HBase_ETL");
+
         job.setJarByClass(HBaseETLJob.class);
 
         // set s3 credentials

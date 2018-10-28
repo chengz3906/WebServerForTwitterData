@@ -30,7 +30,7 @@
                 <version>2.3</version>
                 <configuration>
                     <warSourceDirectory>src/main/webapp</warSourceDirectory>
-                    <warName>ROOT</warName>
+                    <warName>q2</warName>
                 </configuration>
             </plugin>
             <plugin>

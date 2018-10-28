@@ -2,9 +2,10 @@ package cmu.cc.team.spongebob.query2.database;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.List;
 import org.apache.commons.dbcp2.BasicDataSource;
 
-public class DBReader {
+public class TweetIntimacyMySQLBackend {
     /**
      * JDBC driver of MySQL Connector/J.
      */
@@ -33,7 +34,7 @@ public class DBReader {
     private static BasicDataSource ds = new BasicDataSource();
 
 
-    public DBReader() {
+    public TweetIntimacyMySQLBackend() {
         ds.setDriverClassName(JDBC_DRIVER);
         ds.setUrl(URL);
         ds.setUsername(DB_USER);
@@ -42,38 +43,25 @@ public class DBReader {
         ds.setMaxIdle(20);
     }
 
-    public void query(Long userId, String phrase, int n,
-                      ArrayList<String> userName, ArrayList<String> userDesc,
-                      ArrayList<String> contactTweet) {
+    public ArrayList<ContactUser> query(Long userId, String phrase) {
         ArrayList<ContactUser> contacts = new ArrayList<>();
-        getContacts(userId, phrase, contacts);
-        sortContact(contacts);
-        n = n > contacts.size() ? contacts.size() : n;
-        for (int i = 0; i < n; ++i) {
-            userName.add(contacts.get(i).getUserName());
-            userDesc.add(contacts.get(i).getUserDescription());
-            contactTweet.add(contacts.get(i).getTweetText());
-        }
-    }
 
-    public void getContacts(Long userId, String phrase,
-                            ArrayList<ContactUser> contacts) {
+        // Get contact information
         final String sql = String.format(
                 "SELECT uid, tweet_text, intimacy_score, "
-                + "screen_name, description FROM "
-                + "(SELECT user2_id AS uid, tweet_text, "
-                + "intimacy_score, created_at FROM contact_tweet "
-                + "WHERE user1_id=%d UNION "
-                + "SELECT user1_id AS uid, tweet_text, "
-                + "intimacy_score, created_at FROM contact_tweet "
-                + "WHERE user2_id=%d) AS tweet "
-                + "LEFT JOIN contact_user ON tweet.uid=contact_user.id "
-                + "ORDER BY uid ASC, created_at DESC",
+                        + "screen_name, description FROM "
+                        + "(SELECT user2_id AS uid, tweet_text, "
+                        + "intimacy_score, created_at FROM contact_tweet "
+                        + "WHERE user1_id=%d UNION "
+                        + "SELECT user1_id AS uid, tweet_text, "
+                        + "intimacy_score, created_at FROM contact_tweet "
+                        + "WHERE user2_id=%d) AS tweet "
+                        + "LEFT JOIN contact_user ON tweet.uid=contact_user.id "
+                        + "ORDER BY uid ASC, created_at DESC",
                 userId, userId);
         try (Connection conn = ds.getConnection();
              Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)
-        ) {
+             ResultSet rs = stmt.executeQuery(sql)) {
             Long lastUid = null;
             while (rs.next()) {
                 Long uid = rs.getLong("uid");
@@ -91,21 +79,19 @@ public class DBReader {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-    }
 
-    public void sortContact(ArrayList<ContactUser> contacts) {
-
+        // Sort contacts
         contacts.sort((o1, o2) -> {
             if (o1.getScore() > o2.getScore()) {
                 return -1;
-            }
-            else if (o1.getScore() < o2.getScore()) {
+            } else if (o1.getScore() < o2.getScore()) {
                 return 1;
-            }
-            else if (o1.getUserId() < o2.getUserId()) {
+            } else if (o1.getUserId() < o2.getUserId()) {
                 return -1;
-            }
-            else return 1;
+            } else if (o1.getUserId() > o2.getUserId()) {
+                return 1;
+            } else return 0;
         });
+        return contacts;
     }
 }

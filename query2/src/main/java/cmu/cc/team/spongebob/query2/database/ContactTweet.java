@@ -20,9 +20,9 @@ public class ContactTweet implements Comparable<ContactTweet> {
     @Override
     public int compareTo(ContactTweet other) {
         if (this.phraseCount != other.getPhraseCount()) {
-            return this.phraseCount - other.getPhraseCount();
+            return other.getPhraseCount() - this.phraseCount;
         } else {
-            return this.createdAt.compareTo(other.getCreatedAt());
+            return other.getCreatedAt().compareTo(this.createdAt);
         }
     }
 

@@ -88,7 +88,7 @@ public class TweetIntimacyHBaseBackend {
                 String text = Bytes.toString(r.getValue(tweetFamily, textBytes));
                 String createdAt = Bytes.toString(r.getValue(tweetFamily, createdAtBytes));
                 double intimacyScore = Bytes.toDouble(r.getValue(tweetFamily, intimacyScoreBytes));
-                if (id != lastUid) {
+                if (id.equals(lastUid)) {
                     contacts.add(new ContactUser(id, screenName,
                             description, intimacyScore));
                     lastUid = id;

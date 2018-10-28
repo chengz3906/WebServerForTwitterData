@@ -48,22 +48,22 @@ public class TweetIntimacyMySQLBackend {
         ArrayList<ContactUser> contacts = new ArrayList<>();
 
         // Get contact information
-        final String sql = String.format(
-                "SELECT uid, tweet_text, intimacy_score, "
+        final String sql = "SELECT uid, tweet_text, intimacy_score, "
                         + "screen_name, description, created_at FROM "
                         + "(SELECT user2_id AS uid, tweet_text, "
                         + "intimacy_score, created_at FROM contact_tweet "
-                        + "WHERE user1_id=%d UNION "
+                        + "WHERE user1_id=? UNION "
                         + "SELECT user1_id AS uid, tweet_text, "
                         + "intimacy_score, created_at FROM contact_tweet "
-                        + "WHERE user2_id=%d) AS tweet "
+                        + "WHERE user2_id=? AS tweet "
                         + "LEFT JOIN contact_user ON tweet.uid=contact_user.id "
-                        + "ORDER BY uid ASC, created_at DESC",
-                userId, userId);
+                        + "ORDER BY uid ASC, created_at DESC";
         try (Connection conn = ds.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
             Long lastUid = null;
+            stmt.setLong(1, userId);
+            stmt.setLong(2, userId);
+            ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
                 Long uid = rs.getLong("uid");
                 String text = rs.getString("tweet_text");
@@ -78,6 +78,7 @@ public class TweetIntimacyMySQLBackend {
                 }
                 contacts.get(contacts.size() - 1).addTweet(text, phrase, createdAt);
             }
+            rs.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }

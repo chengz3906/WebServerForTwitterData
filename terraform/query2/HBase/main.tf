@@ -113,19 +113,19 @@ resource "aws_emr_cluster" "database_hbase" {
     bid_price = "${var.master_node_bid_price}"
   }
 
-  instance_group {
-    instance_role  = "CORE"
-    instance_type  = "${var.core_node_instance_type}"
-    instance_count = "${var.core_node_instance_count}"
-
-    ebs_config {
-      size                 = "32"
-      type                 = "gp2"
-      volumes_per_instance = 1
-    }
-
-    bid_price = "${var.core_node_bid_price}"
-  }
+//  instance_group {
+//    instance_role  = "CORE"
+//    instance_type  = "${var.core_node_instance_type}"
+//    instance_count = "${var.core_node_instance_count}"
+//
+//    ebs_config {
+//      size                 = "32"
+//      type                 = "gp2"
+//      volumes_per_instance = 1
+//    }
+//
+//    bid_price = "${var.core_node_bid_price}"
+//  }
 
   tags {
     Name    = "HBase Cluster"

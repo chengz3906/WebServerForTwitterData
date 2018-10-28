@@ -33,40 +33,40 @@ provider "aws" {
 
 resource "aws_security_group" "hbase_additional_sg" {
   # inbound internet access for ssh
-  ingress {
-    from_port = 22
-    to_port   = 22
-    protocol  = "tcp"
-
-    cidr_blocks = [
-      "0.0.0.0/0",
-    ]
-  }
-
-  # inbound internet access for hbase master and data nodes
-  ingress {
-    from_port = 16000
-    to_port   = 16030
-    protocol  = "tcp"
-
-    cidr_blocks = [
-      "0.0.0.0/0",
-    ]
-  }
-
-  # inbound internet access for hbase zookeeper
-  ingress {
-    from_port = 2181
-    to_port   = 2181
-    protocol  = "tcp"
-
-    cidr_blocks = [
-      "0.0.0.0/0",
-    ]
-  }
+//  ingress {
+//    from_port = 22
+//    to_port   = 22
+//    protocol  = "tcp"
+//
+//    cidr_blocks = [
+//      "0.0.0.0/0",
+//    ]
+//  }
+//
+//  # inbound internet access for hbase master and data nodes
+//  ingress {
+//    from_port = 16000
+//    to_port   = 16030
+//    protocol  = "tcp"
+//
+//    cidr_blocks = [
+//      "0.0.0.0/0",
+//    ]
+//  }
+//
+//  # inbound internet access for hbase zookeeper
+//  ingress {
+//    from_port = 2181
+//    to_port   = 2181
+//    protocol  = "tcp"
+//
+//    cidr_blocks = [
+//      "0.0.0.0/0",
+//    ]
+//  }
 
   tags {
-    Name = "EMR security group"
+    Name = "EMR additional security group"
   }
 }
 
@@ -91,8 +91,8 @@ resource "aws_emr_cluster" "database_hbase" {
     instance_profile = "EMR_EC2_DefaultRole"
 
     # Additional security group for master
-    additional_master_security_groups = "${aws_security_group.hbase_additional_sg.id}"
-    additional_slave_security_groups  = "${aws_security_group.hbase_additional_sg.id}"
+//    additional_master_security_groups = "${aws_security_group.hbase_additional_sg.id}"
+//    additional_slave_security_groups  = "${aws_security_group.hbase_additional_sg.id}"
   }
 
   # so that you can add steps to run the MapReduce streaming jobs later

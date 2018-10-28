@@ -51,7 +51,7 @@ echo "
 export TEAMID=<TEAMID>
 export TEAM_AWS_ACCOUNT_ID=<AWS_ACCOUNT_ID>
 " | sudo tee --append /var/lib/tomcat8/bin/setenv.sh
-sudo service tomcat restart
+sudo service tomcat8 restart
 
 # create new databases
 sudo mysql < create_twitter_database.sql

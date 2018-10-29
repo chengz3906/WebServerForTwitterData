@@ -4,8 +4,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>cmu.cc.team.spongebob.etl</groupId>
-    <artifactId>phase1</artifactId>
+    <groupId>cmu.cc.team.spongebob.etl.phase1</groupId>
+    <artifactId>s3-to-hfiles</artifactId>
     <version>1.0-SNAPSHOT</version>
 
     <build>
@@ -29,6 +29,11 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
+                            <artifactSet>
+                                <excludes>
+                                    <exclude></exclude>
+                                </excludes>
+                            </artifactSet>
                             <minimizeJar>false</minimizeJar>
                             <transformers>
                                 <transformer

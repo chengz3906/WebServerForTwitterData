@@ -33,15 +33,15 @@ provider "aws" {
 
 resource "aws_security_group" "hbase_additional_sg" {
   # inbound internet access for ssh
-//  ingress {
-//    from_port = 22
-//    to_port   = 22
-//    protocol  = "tcp"
-//
-//    cidr_blocks = [
-//      "0.0.0.0/0",
-//    ]
-//  }
+  ingress {
+    from_port = 22
+    to_port   = 22
+    protocol  = "tcp"
+
+    cidr_blocks = [
+      "0.0.0.0/0",
+    ]
+  }
 //
 //  # inbound internet access for hbase master and data nodes
 //  ingress {
@@ -91,8 +91,8 @@ resource "aws_emr_cluster" "database_hbase" {
     instance_profile = "EMR_EC2_DefaultRole"
 
     # Additional security group for master
-//    additional_master_security_groups = "${aws_security_group.hbase_additional_sg.id}"
-//    additional_slave_security_groups  = "${aws_security_group.hbase_additional_sg.id}"
+    additional_master_security_groups = "${aws_security_group.hbase_additional_sg.id}"
+    additional_slave_security_groups  = "${aws_security_group.hbase_additional_sg.id}"
   }
 
   # so that you can add steps to run the MapReduce streaming jobs later
@@ -113,19 +113,19 @@ resource "aws_emr_cluster" "database_hbase" {
     bid_price = "${var.master_node_bid_price}"
   }
 
-//  instance_group {
-//    instance_role  = "CORE"
-//    instance_type  = "${var.core_node_instance_type}"
-//    instance_count = "${var.core_node_instance_count}"
-//
-//    ebs_config {
-//      size                 = "32"
-//      type                 = "gp2"
-//      volumes_per_instance = 1
-//    }
-//
-//    bid_price = "${var.core_node_bid_price}"
-//  }
+  instance_group {
+    instance_role  = "CORE"
+    instance_type  = "${var.core_node_instance_type}"
+    instance_count = "${var.core_node_instance_count}"
+
+    ebs_config {
+      size                 = "32"
+      type                 = "gp2"
+      volumes_per_instance = 1
+    }
+
+    bid_price = "${var.core_node_bid_price}"
+  }
 
   tags {
     Name    = "HBase Cluster"

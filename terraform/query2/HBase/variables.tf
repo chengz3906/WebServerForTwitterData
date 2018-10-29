@@ -21,7 +21,7 @@ variable "core_node_instance_type" {
 }
 
 variable "core_node_instance_count" {
-  default = "0"
+  default = "1"
 }
 
 variable "core_node_bid_price" {

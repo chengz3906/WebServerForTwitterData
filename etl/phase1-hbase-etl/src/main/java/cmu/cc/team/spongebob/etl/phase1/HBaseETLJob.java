@@ -95,6 +95,9 @@ public class HBaseETLJob {
         String inputPath = args[0];
         String outputPath = args[1];
 
+        System.out.println("input Path: " + inputPath);
+        System.out.println("output Path: " + outputPath);
+
         Configuration conf = HBaseConfiguration.create();
         conf.set("hbase.master", zkAddr + ":14000");
         conf.set("hbase.zookeeper.quorum", zkAddr);

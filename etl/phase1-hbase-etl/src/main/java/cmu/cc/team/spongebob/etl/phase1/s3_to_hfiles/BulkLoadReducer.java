@@ -2,6 +2,7 @@ package cmu.cc.team.spongebob.etl.phase1.s3_to_hfiles;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import org.apache.hadoop.hbase.client.Mutation;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -13,7 +14,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 
-public class BulkLoadReducer extends Reducer<LongWritable, String, ImmutableBytesWritable, Put> {
+public class BulkLoadReducer extends Reducer<LongWritable, Text, ImmutableBytesWritable, Mutation> {
     private static final byte[] COLF_USER1 = "user1".getBytes();
     private static final byte[] COLF_USER2 = "user2".getBytes();
     private static final byte[] COLF_TWEET = "tweet".getBytes();

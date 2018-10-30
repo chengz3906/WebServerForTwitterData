@@ -8,6 +8,7 @@ import org.apache.hadoop.mapreduce.Mapper;
 
 import java.io.IOException;
 
+
 public class BulkLoadMapper extends Mapper<LongWritable, Text, LongWritable, Text> {
     private static final JsonParser jsonParser = new JsonParser();
     private static final LongWritable user1IDWriteable = new LongWritable();

@@ -49,9 +49,14 @@ export MYSQL_PWD=15619
 # DANGEROUS
 echo "
 export TEAMID=<TEAMID>
+<<<<<<< HEAD
 export TEAM_AWS_ACCOUNT_ID=<TEAMID>
 " | sudo tee --append /var/lib/tomcat8/bin/setenv.sh
 sleep 30
+=======
+export TEAM_AWS_ACCOUNT_ID=<AWS_ACCOUNT_ID>
+" | sudo tee --append /var/lib/tomcat8/bin/setenv.sh
+>>>>>>> 44269ea4ebf1f1dc4a82985e7981740cf6f8d276
 sudo service tomcat8 restart
 
 # create new databases

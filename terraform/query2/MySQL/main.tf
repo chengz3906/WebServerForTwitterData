@@ -36,6 +36,25 @@ resource "aws_instance" "mysql_server" {
 
   provisioner "remote-exec" {
     script = "script.sh"
+<<<<<<< HEAD
+=======
+//    inline = [
+//      "sudo apt update",
+//      "sleep 30",
+//      "sudo apt install -y mysql-server",
+//      "sleep 30",
+//      "sudo mysql < config_mysql.sql",
+//      "echo '[mysqld]' | sudo tee --append /etc/mysql/mysql.conf.d/mysqld.cnf",
+//      "echo 'bind-address = 0.0.0.0' | sudo tee --append /etc/mysql/mysql.conf.d/mysqld.cnf",
+//      "echo 'character-set-server = utf8mb4' | sudo tee --append /etc/mysql/mysql.conf.d/mysqld.cnf",
+//      "echo 'collation-server = utf8mb4_unicode_ci' | sudo tee --append /etc/mysql/mysql.conf.d/mysqld.cnf",
+//      "echo '[client]' | sudo tee --append /etc/mysql/mysql.conf.d/mysqld.cnf",
+//      "echo 'default-character-set = utf8mb4' | sudo tee --append /etc/mysql/mysql.conf.d/mysqld.cnf",
+//      "echo '[mysql]' | sudo tee --append /etc/mysql/mysql.conf.d/mysqld.cnf",
+//      "echo 'default-character-set = utf8mb4' | sudo tee --append /etc/mysql/mysql.conf.d/mysqld.cnf",
+//      "sudo service mysql restart"
+//    ]
+>>>>>>> 44269ea4ebf1f1dc4a82985e7981740cf6f8d276
   }
 
   root_block_device {

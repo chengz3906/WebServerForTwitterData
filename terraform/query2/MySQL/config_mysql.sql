@@ -1,4 +1,4 @@
 use mysql;
-create user 'spongebob'@'%' identified by '15619';
-grant all privileges on *.* to 'spongebob'@'%' identified by '15619' with grant option;
+create user '<SQL_USER>'@'%' identified by '<SQL_PASSWORD>';
+grant all privileges on *.* to '<SQL_USER>'@'%' identified by '<SQL_PASSWORD>' with grant option;
 flush privileges;

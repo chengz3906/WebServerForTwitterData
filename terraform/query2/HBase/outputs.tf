@@ -1,3 +1,4 @@
+# (reference)
 # output variables is a way to organize data to be easily queried and
 # shown back to the Terraform user.
 #

@@ -3,7 +3,7 @@ provider "aws" {
 }
 
 resource "aws_instance" "mysql_server" {
-//  count = "${var.count}"
+  count = "${var.count}"
   ami = "${var.ami}" # variable
   instance_type = "${var.instance_type}" # variable
   key_name = "${var.key_name}" # variable
@@ -72,7 +72,6 @@ resource "aws_lb" "lb" {
   name = "tf-lb"
   internal = false
   load_balancer_type = "network"
-//  security_groups = [""] // default
   subnets = ["${data.aws_subnet_ids.default_subnet_ids.ids}"]
 
   tags = {

@@ -3,7 +3,7 @@ provider "aws" {
 }
 
 resource "aws_instance" "backend_server" {
-  count = "${var.instance_num}$"
+  count = "${var.instance_num}"
   ami = "${var.ami}" # variable
   instance_type = "${var.instance_type}" # variable
   key_name = "${var.key_name}" # variable
@@ -25,7 +25,7 @@ resource "aws_instance" "backend_server" {
   }
 
   tags {
-    Name = "QR Code"
+    Name = "QR Code M5 ${count.index}"
     Project = "Phase2"
   }
 }
@@ -39,7 +39,7 @@ data "aws_subnet_ids" "default_subnet_ids" {
 resource "aws_lb_target_group" "lb_target_group" {
   name = "tf-lb-tg"
   port = 8080
-  protocol = "HTTP"
+  protocol = "TCP"
   vpc_id = "${aws_default_vpc.default_vpc.id}"
   health_check {
     port = "8080"
@@ -51,11 +51,11 @@ resource "aws_lb_target_group" "lb_target_group" {
 resource "aws_lb" "lb" {
   name = "tf-lb"
   internal = false
-  load_balancer_type = "application"
+  load_balancer_type = "network"
   subnets = ["${data.aws_subnet_ids.default_subnet_ids.ids}"]
 
   tags = {
-    Project = "Phase1"
+    Project = "Phase2"
   }
 }
 
@@ -66,10 +66,10 @@ resource "aws_lb_listener" "lb_listener" {
   }
   load_balancer_arn = "${aws_lb.lb.arn}"
   port = 80
-  protocol = "HTTP"
+  protocol = "TCP"
 }
 
 resource "aws_lb_target_group_attachment" "lb_tga" {
   target_group_arn = "${aws_lb_target_group.lb_target_group.arn}"
-  target_id = "${aws_instance.backend_server.*.id}"
+  target_id = "${aws_instance.backend_server.*.id[count.index]}"
 }

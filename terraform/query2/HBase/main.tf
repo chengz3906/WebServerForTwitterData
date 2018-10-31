@@ -1,4 +1,4 @@
-# HBase EMR Cluster Template
+# HBase EMR Cluster Template (reference)
 #
 # In this module, you need to provision an EMR Cluster for HBase
 # with the following requirements.
@@ -42,28 +42,6 @@ resource "aws_security_group" "hbase_additional_sg" {
       "0.0.0.0/0",
     ]
   }
-//
-//  # inbound internet access for hbase master and data nodes
-//  ingress {
-//    from_port = 16000
-//    to_port   = 16030
-//    protocol  = "tcp"
-//
-//    cidr_blocks = [
-//      "0.0.0.0/0",
-//    ]
-//  }
-//
-//  # inbound internet access for hbase zookeeper
-//  ingress {
-//    from_port = 2181
-//    to_port   = 2181
-//    protocol  = "tcp"
-//
-//    cidr_blocks = [
-//      "0.0.0.0/0",
-//    ]
-//  }
 
   tags {
     Name = "EMR additional security group"

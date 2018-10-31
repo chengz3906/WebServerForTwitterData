@@ -5,11 +5,11 @@ variable "ami" {
 
 # instance type
 variable "instance_type" {
-  default = "t2.micro"
+  default = "m5.large"
 }
 
 variable "instance_num" {
-  default = 2
+  default = 5
 }
 
 # Update "key_name" with the key pair name for SSH connection

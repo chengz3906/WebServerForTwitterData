@@ -16,7 +16,7 @@ resource "aws_instance" "backend_server" {
   }
 
   provisioner "file" {
-    source = "../../../query1/target/q1.war" # variable
+    source = "../../query1/target/q1.war" # variable
     destination = "q1.war" # variable
   }
 

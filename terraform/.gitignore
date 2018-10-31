@@ -1,2 +1,4 @@
 *.pem
 *.tfstate.*
+*.terraform/
+*.tfstate

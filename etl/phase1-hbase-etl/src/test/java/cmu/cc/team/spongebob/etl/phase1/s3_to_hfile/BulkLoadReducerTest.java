@@ -33,7 +33,7 @@ public class BulkLoadReducerTest {
     }
 
     @Test
-    public void testWordCountMapper() throws IOException {
+    public void testBulkLoadReducer() throws IOException {
         JsonObject rowJsonObj = new JsonObject();
         rowJsonObj.addProperty("user1_id", 123L);
         rowJsonObj.addProperty("user1_screen_name", "allen");

@@ -61,36 +61,44 @@ public class BulkLoadReducer extends Reducer<LongWritable, Text, ImmutableBytesW
 
         // user1
         if (user1ScreenName != null) {
-            KeyValue user1ScreenNameKV = new KeyValue(rowKeyBytes, COLF_USER1, COL_USER_SCREEN_NAME, user1ScreenName.getBytes());
+            KeyValue user1ScreenNameKV = new KeyValue(rowKeyBytes,
+                    COLF_USER1, COL_USER_SCREEN_NAME, user1ScreenName.getBytes());
             context.write(rowKey, user1ScreenNameKV);
         }
 
         if (user1Description != null) {
-            KeyValue user1DescKV = new KeyValue(rowKeyBytes, COLF_USER1, COL_USER_DESC, user1Description.getBytes());
+            KeyValue user1DescKV = new KeyValue(rowKeyBytes,
+                    COLF_USER1, COL_USER_DESC, user1Description.getBytes());
             context.write(rowKey, user1DescKV);
         }
 
         // user2
-        KeyValue user2IDKeyValue = new KeyValue(rowKeyBytes, COLF_USER2, COL_USER_ID, Bytes.toBytes(user2ID));
+        KeyValue user2IDKeyValue = new KeyValue(rowKeyBytes,
+                COLF_USER2, COL_USER_ID, Bytes.toBytes(user2ID));
         context.write(rowKey, user2IDKeyValue);
 
-        KeyValue user2KV = new KeyValue(rowKeyBytes, COLF_USER2, COL_USER_INTIMACY, Bytes.toBytes(intimacyScore));
+        KeyValue user2KV = new KeyValue(rowKeyBytes,
+                COLF_USER2, COL_USER_INTIMACY, Bytes.toBytes(intimacyScore));
         context.write(rowKey, user2KV);
         if (user2ScreenName != null) {
-            KeyValue user2ScreenNameKV = new KeyValue(rowKeyBytes, COLF_USER2, COL_USER_SCREEN_NAME, user2ScreenName.getBytes());
+            KeyValue user2ScreenNameKV = new KeyValue(rowKeyBytes,
+                    COLF_USER2, COL_USER_SCREEN_NAME, user2ScreenName.getBytes());
             context.write(rowKey, user2ScreenNameKV);
         }
         if (user2Description != null) {
-            KeyValue user2Desc = new KeyValue(rowKeyBytes, COLF_USER2, COL_USER_DESC, user2Description.getBytes());
+            KeyValue user2Desc = new KeyValue(rowKeyBytes,
+                    COLF_USER2, COL_USER_DESC, user2Description.getBytes());
             context.write(rowKey, user2Desc);
         }
 
         // tweet
         if (tweetText != null) {
-            KeyValue tweetTextKV = new KeyValue(rowKeyBytes, COLF_TWEET, COL_TWEET_TEXT, tweetText.getBytes());
+            KeyValue tweetTextKV = new KeyValue(rowKeyBytes,
+                    COLF_TWEET, COL_TWEET_TEXT, tweetText.getBytes());
             context.write(rowKey, tweetTextKV);
         }
-        KeyValue tweetCreatedAtKV = new KeyValue(rowKeyBytes, COLF_TWEET, COL_TWEET_CREATED_AT, tweetCreatedAt.getBytes());
+        KeyValue tweetCreatedAtKV = new KeyValue(rowKeyBytes,
+                COLF_TWEET, COL_TWEET_CREATED_AT, tweetCreatedAt.getBytes());
         context.write(rowKey, tweetCreatedAtKV);
     }
 }

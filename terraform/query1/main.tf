@@ -2,17 +2,13 @@ provider "aws" {
   region = "us-east-1"
 }
 
-resource "aws_default_vpc" "default_vpc" {}
 
-data "aws_subnet_ids" "default_subnet_ids" {
-  vpc_id = "${aws_default_vpc.default_vpc.id}"
-}
 
 resource "aws_instance" "backend_server" {
-  count = 2
-  ami = "ami-0ac019f4fcb7cb7e6" # variable
-  instance_type = "t2.micro" # variable
-  key_name = "phase1-qrcode" # variable
+  count = "${var.instance_num}$"
+  ami = "${var.ami}" # variable
+  instance_type = "${var.instance_type}" # variable
+  key_name = "${var.key_name}" # variable
 
   # security_groups = [] # default is default
 
@@ -20,11 +16,11 @@ resource "aws_instance" "backend_server" {
   connection {
     type = "ssh"
     user = "ubuntu"
-    private_key = "${file("phase1-qrcode.pem")}" # variable
+    private_key = "${file("../../../team-project.pem")}" # variable
   }
 
   provisioner "file" {
-    source = "q1.war" # variable
+    source = "../../../query1/target/q1.war" # variable
     destination = "q1.war" # variable
   }
 
@@ -33,11 +29,16 @@ resource "aws_instance" "backend_server" {
   }
 
   tags {
-    Name = "CC Team Terraform Primer"
-    Project = "Phase1"
+    Name = "QR Code"
+    Project = "Phase2"
   }
 }
 
+resource "aws_default_vpc" "default_vpc" {}
+
+data "aws_subnet_ids" "default_subnet_ids" {
+  vpc_id = "${aws_default_vpc.default_vpc.id}"
+}
 
 resource "aws_lb_target_group" "lb_target_group" {
   name = "tf-lb-tg"

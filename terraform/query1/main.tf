@@ -2,15 +2,11 @@ provider "aws" {
   region = "us-east-1"
 }
 
-
-
 resource "aws_instance" "backend_server" {
   count = "${var.instance_num}$"
   ami = "${var.ami}" # variable
   instance_type = "${var.instance_type}" # variable
   key_name = "${var.key_name}" # variable
-
-  # security_groups = [] # default is default
 
   # Any connection information provided in a resource will apply to all the provisioners
   connection {
@@ -56,7 +52,6 @@ resource "aws_lb" "lb" {
   name = "tf-lb"
   internal = false
   load_balancer_type = "application"
-//  security_groups = [""] // default
   subnets = ["${data.aws_subnet_ids.default_subnet_ids.ids}"]
 
   tags = {

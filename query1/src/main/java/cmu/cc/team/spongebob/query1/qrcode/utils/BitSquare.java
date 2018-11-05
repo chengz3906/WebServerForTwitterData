@@ -5,6 +5,7 @@ import java.util.BitSet;
 
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 
 
 public class BitSquare {
@@ -103,6 +104,24 @@ public class BitSquare {
         return null;
     }
 
+
+    public ImmutablePair<Integer, Integer> find(final BitSquare pattern, int rStart, int cStart) {
+        BitSquare window = new BitSquare(pattern.size);
+
+        for (int i = rStart; i <= size - pattern.size; i++) {
+            for (int j = (i == rStart) ? cStart : 0; j <= size -  pattern.size; j++) {
+                window.clear();
+                cachedSlice(i, j, pattern.size, window);
+
+                if (window.equals(pattern)) { // patterns aligned
+                    return new ImmutablePair<>(i, j);
+                }
+            }
+        }
+
+        return null;
+    }
+
     public boolean equals(BitSquare another) {
         return this.size == another.size && this.bitSet.equals(another.bitSet);
     }
@@ -126,7 +145,7 @@ public class BitSquare {
         return new BitSquare(size, bits);
     }
 
-    private void rotate90() {
+    public void rotate90() {
         int i = bitSet.nextSetBit(0);
         BitSet rotated = new BitSet(size * size);
 
@@ -143,7 +162,7 @@ public class BitSquare {
         this.bitSet = rotated;
     }
 
-    private void cachedSlice(int rowStart, int colStart, int sliceSize, BitSquare cache) {
+    public void cachedSlice(int rowStart, int colStart, int sliceSize, BitSquare cache) {
         cache.clear();
 
         int firstInd = rowStart * this.size + colStart;

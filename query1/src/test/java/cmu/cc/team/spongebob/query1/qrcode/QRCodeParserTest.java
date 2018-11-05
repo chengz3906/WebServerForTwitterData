@@ -1,10 +1,7 @@
 package cmu.cc.team.spongebob.query1.qrcode;
 
 import cmu.cc.team.spongebob.query1.qrcode.utils.BitSquare;
-import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
-
-import java.util.BitSet;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -82,12 +79,24 @@ class QRCodeParserTest {
 
     @Test
     void testEncodeSpeed() {
-        // TODO implement speed test
+        final long startTime = System.currentTimeMillis();
+        for (int i = 0; i < 10000; i++) {
+            testQRCodeEncode();
+        }
+        final long endTime = System.currentTimeMillis();
+
+        System.out.println("QR code encoding, total execution time: " + (endTime - startTime) + "ms");
     }
 
     @Test
     void testDecodeSpeed() {
-        // TODO implement speed test
+        final long startTime = System.currentTimeMillis();
+        for (int i = 0; i < 10000; i++) {
+            testQRCodeDecode();
+        }
+        final long endTime = System.currentTimeMillis();
+
+        System.out.println("QR code decode, total execution time: " + (endTime - startTime) + "ms");
     }
 
     @Test

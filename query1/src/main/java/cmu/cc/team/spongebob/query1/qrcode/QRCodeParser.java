@@ -23,6 +23,11 @@ public class QRCodeParser {
     private final BitSquare QR_V2_TEMPLATE;
 
     /**
+     * position detection patter
+     */
+    private final BitSquare POS_DETECTION_PATTERN;
+
+    /**
      * sequences of coordinates that describes how to put a payload.
      */
     private final ArrayList<ImmutablePair<Integer, Integer>> ZIGZAG_V1;
@@ -52,6 +57,7 @@ public class QRCodeParser {
     public QRCodeParser() {
         QR_V1_TEMPLATE = loadQRCodeTemplate(21);
         QR_V2_TEMPLATE = loadQRCodeTemplate(25);
+        POS_DETECTION_PATTERN = loadPositionDetectionPattern();
         ZIGZAG_V1 = loadZigZagFill(21);
         ZIGZAG_V2 = loadZigZagFill(25);
         ENCODE_LOG_MAP_V1 = buildEncodeLogisticMap(21);
@@ -80,17 +86,35 @@ public class QRCodeParser {
         BitSquare searchSpace = hexStringToBinarySquare(encryptedHexString, 32);
         searchSpace.xor(DECODE_LOG_MAP); // decrypt
 
-        BitSquare qrCode = searchSpace.locateAndSlice(QR_V1_TEMPLATE);
-        if (qrCode == null) {
-            qrCode = searchSpace.locateAndSlice(QR_V2_TEMPLATE);
+        BitSquare cache = new BitSquare(7);
+        BitSquare qrCode;
+
+        ImmutablePair<Integer, Integer> firstPattern =
+                searchSpace.find(POS_DETECTION_PATTERN, 0 ,0);
+
+        searchSpace.cachedSlice(firstPattern.getLeft() + 14, firstPattern.getRight(), 7, cache);
+        if (cache.equals(POS_DETECTION_PATTERN)) {
+            qrCode = new BitSquare(21);
+            if (firstPattern.getRight() )
+            searchSpace.cachedSlice(firstPattern.getLeft(), firstPattern.getRight(), 21, qrCode);
+            qrCode.cachedSlice(0, 14, 7, cache);
+            if (!cache.equals(POS_DETECTION_PATTERN)) {
+                qrCode.rotate90();
+            }
+        } else {
+            if (firstPattern.getLeft() + 18 < 32) {
+                searchSpace.cachedSlice(firstPattern.getLeft() + 18, firstPattern.getRight(), 7, cache);
+                if (cache.equals(POS_DETECTION_PATTERN)) {
+                    qrCode = new BitSquare(25);
+                    searchSpace.cachedSlice(firstPattern.getLeft(), firstPattern.getRight(), 25, qrCode);
+                    if (!cache.equals(POS_DETECTION_PATTERN)) {
+                        qrCode.rotate90();
+                    }
+                }
+            }
         }
 
-        if (qrCode == null) {
-            throw new QRParsingException();
-        }
-
-        byte[] payload = getQRPayload(qrCode);
-        return qrPayloadToMessage(payload);
+        return null;
     }
 
     BitSquare messageToBinarySquare(String message, boolean encrypt) {
@@ -246,6 +270,34 @@ public class QRCodeParser {
 
         return template;
     }
+
+
+    private BitSquare loadPositionDetectionPattern() {
+        BitSquare posDectionPattern = new BitSquare(7);
+
+        ClassLoader classLoader = getClass().getClassLoader();
+        File file = new File(classLoader.getResource("QR_position_detection_pattern.txt").getFile());
+
+        try (Scanner scanner = new Scanner(file)) {
+            int row = 0;
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine();
+                for (int i = 0; i < 7; i++) {
+                    char c = line.charAt(i);
+                    if (c == '1') {
+                        posDectionPattern.setBit(row, i);
+                    }
+                }
+                row++;
+            }
+        } catch (FileNotFoundException e) {
+            System.out.println("fail to load QR Position Detection Pattern");
+            e.printStackTrace();
+        }
+
+        return posDectionPattern;
+    }
+
 
     private ArrayList<ImmutablePair<Integer, Integer>> loadZigZagFill(int size) {
         ArrayList<ImmutablePair<Integer, Integer>> zigzag = new ArrayList<>();

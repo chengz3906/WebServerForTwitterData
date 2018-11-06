@@ -1,7 +1,9 @@
 package cmu.cc.team.spongebob.vertx;
 
 import cmu.cc.team.spongebob.query1.qrcode.QRCodeParser;
+import cmu.cc.team.spongebob.query2.database.ContactUser;
 import cmu.cc.team.spongebob.utils.caching.KeyValueLRUCache;
+import cmu.cc.team.spongebob.query2.database.TweetIntimacyMySQLBackend;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
@@ -11,8 +13,13 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 
+import java.util.ArrayList;
+
 public class MainVerticle extends AbstractVerticle {
     private static final Logger LOGGER = LoggerFactory.getLogger(MainVerticle.class);
+    private final String TEAMID = System.getenv("TEAMID");
+    private final String TEAM_AWS_ACCOUNT_ID = System.getenv("TEAM_AWS_ACCOUNT_ID");
+    private TweetIntimacyMySQLBackend dbReader;
 
     private QRCodeParser parser;
     private KeyValueLRUCache cache;
@@ -25,6 +32,7 @@ public class MainVerticle extends AbstractVerticle {
     @Override
     public void start(Future<Void> startFuture) throws Exception {
         parser = new QRCodeParser();
+        dbReader = new TweetIntimacyMySQLBackend();
         cache = KeyValueLRUCache.getInstance();
         Future<Void> steps = startHttpServer();
         startFuture.complete();
@@ -73,7 +81,46 @@ public class MainVerticle extends AbstractVerticle {
     }
 
     private void mysqlHandler(RoutingContext context) {
-        context.response().end("TODO: add MySQL handler.");
+        String resp = String.format("%s,%s\n", TEAMID, TEAM_AWS_ACCOUNT_ID);
+        String phrase = context.request().getParam("phrase");
+        String userIdStr = context.request().getParam("user_id");
+        String nStr = context.request().getParam("n");
+        if (phrase.isEmpty() || userIdStr.isEmpty()
+                || nStr.isEmpty()) {
+            context.response().end(resp);
+            return;
+        }
+        Long userId = Long.parseLong(userIdStr);
+        int n = Integer.parseInt(nStr);
+
+        // Query cache
+        String requestKey = String.format("q2/user_id=%s&phrase=%s&n=%s",
+                userIdStr, phrase, nStr);
+        String info = cache.get(requestKey);
+        if (info != null) {
+            context.response().end(resp + info);
+            return;
+        }
+
+        // Query database
+        ArrayList<ContactUser> contactUsers = dbReader.query(userId, phrase);
+        n = n > contactUsers.size() ? contactUsers.size() : n;
+        info = "";
+        for (int i = 0; i < n; ++i) {
+            ContactUser contactUser = contactUsers.get(i);
+            info += String.format("%s\t%s\t%s",
+                    contactUser.getUserName(),
+                    contactUser.getUserDescription(),
+                    contactUser.getTweetText());
+
+            // output new line if it is not the last line
+            if (i < n - 1) {
+                info += "\n";
+            }
+        }
+        resp += info;
+        context.response().end(resp);
+        cache.put(requestKey, info);
     }
 
     private String executeQRCodeRequest(String type, String message) {

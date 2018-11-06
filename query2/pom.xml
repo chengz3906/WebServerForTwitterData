@@ -80,5 +80,10 @@
             <artifactId>hbase-client</artifactId>
             <version>1.4.1</version>
         </dependency>
+        <dependency>
+            <groupId>cmu.cc.team.spongebob</groupId>
+            <artifactId>utils</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 </project>

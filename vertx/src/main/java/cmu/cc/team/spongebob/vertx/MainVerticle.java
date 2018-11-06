@@ -1,5 +1,8 @@
 package cmu.cc.team.spongebob.vertx;
 
+import cmu.cc.team.spongebob.query1.qrcode.QRCodeParser;
+import cmu.cc.team.spongebob.utils.caching.KeyValueLRUCache;
+
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.http.HttpServer;
@@ -8,18 +11,21 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 
-
 public class MainVerticle extends AbstractVerticle {
     private static final Logger LOGGER = LoggerFactory.getLogger(MainVerticle.class);
 
-//    private QRCodeParser parser;
-//    private KeyValueLRUCache cache;
+    private QRCodeParser parser;
+    private KeyValueLRUCache cache;
 
+    public MainVerticle () {
+        parser = new QRCodeParser();
+        cache = KeyValueLRUCache.getInstance();
+    }
 
     @Override
     public void start(Future<Void> startFuture) throws Exception {
-//        parser = new QRCodeParser();
-//        cache = KeyValueLRUCache.getInstance();
+        parser = new QRCodeParser();
+        cache = KeyValueLRUCache.getInstance();
         Future<Void> steps = startHttpServer();
         startFuture.complete();
     }
@@ -31,6 +37,7 @@ public class MainVerticle extends AbstractVerticle {
         Router router = Router.router(vertx);
         router.get("/").handler(this::indexHandler);
         router.get("/q1").handler(this::qrcodeHandler);
+        router.get("/q2").handler(this::mysqlHandler);
 
         server
                 .requestHandler(router::accept)
@@ -47,7 +54,7 @@ public class MainVerticle extends AbstractVerticle {
     }
 
     private void indexHandler(RoutingContext context) {
-        context.response().end("Hello from Vert.x!");
+        context.response().end("Heartbeat: Hello from Vert.x!");
     }
 
     private void qrcodeHandler(RoutingContext context) {
@@ -65,18 +72,22 @@ public class MainVerticle extends AbstractVerticle {
         context.response().end(resp);
     }
 
-//    private String executeQRCodeRequest(String type, String message) {
-//        String result = "";
-//        if (type.equals("encode")) {
-//            result = parser.encode(message, true);
-//        } else if (type.equals("decode")) {
-//            try {
-//                result = parser.decode(message);
-//            } catch (QRCodeParser.QRParsingException e) {
-//                result = "decoding error";
-//            }
-//        }
-//        return result;
-//    }
+    private void mysqlHandler(RoutingContext context) {
+        context.response().end("TODO: add MySQL handler.");
+    }
+
+    private String executeQRCodeRequest(String type, String message) {
+        String result = "";
+        if (type.equals("encode")) {
+            result = parser.encode(message, true);
+        } else if (type.equals("decode")) {
+            try {
+                result = parser.decode(message);
+            } catch (QRCodeParser.QRParsingException e) {
+                result = "decoding error";
+            }
+        }
+        return result;
+    }
 
 }

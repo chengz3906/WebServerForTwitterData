@@ -81,7 +81,7 @@ class QRCodeParserTest {
     void testEncodeSpeed() {
         final long startTime = System.currentTimeMillis();
         for (int i = 0; i < 10000; i++) {
-            testQRCodeEncode();
+            testQRCodeEncrypt();
         }
         final long endTime = System.currentTimeMillis();
 

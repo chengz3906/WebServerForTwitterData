@@ -83,6 +83,7 @@ public class QRCodeParser {
      * @throws QRParsingException when error code check fails
      */
     public String decode(String encryptedHexString) throws QRParsingException {
+        /*
         BitSquare searchSpace = hexStringToBinarySquare(encryptedHexString, 32);
         searchSpace.xor(DECODE_LOG_MAP); // decrypt
 
@@ -113,6 +114,7 @@ public class QRCodeParser {
                 }
             }
         }
+        */
 
         return null;
     }

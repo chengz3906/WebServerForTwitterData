@@ -83,40 +83,72 @@ public class QRCodeParser {
      * @throws QRParsingException when error code check fails
      */
     public String decode(String encryptedHexString) throws QRParsingException {
-        /*
         BitSquare searchSpace = hexStringToBinarySquare(encryptedHexString, 32);
         searchSpace.xor(DECODE_LOG_MAP); // decrypt
 
         BitSquare cache = new BitSquare(7);
-        BitSquare qrCode;
 
         ImmutablePair<Integer, Integer> firstPattern =
                 searchSpace.find(POS_DETECTION_PATTERN, 0 ,0);
 
-        searchSpace.cachedSlice(firstPattern.getLeft() + 14, firstPattern.getRight(), 7, cache);
-        if (cache.equals(POS_DETECTION_PATTERN)) {
-            qrCode = new BitSquare(21);
-            if (firstPattern.getRight() )
-            searchSpace.cachedSlice(firstPattern.getLeft(), firstPattern.getRight(), 21, qrCode);
-            qrCode.cachedSlice(0, 14, 7, cache);
-            if (!cache.equals(POS_DETECTION_PATTERN)) {
+        if (firstPattern == null) {
+            throw new QRParsingException();
+        }
+
+        // System.out.println(firstPattern);
+
+        ImmutablePair<Integer, Integer> secondPattern =
+                searchSpace.find(POS_DETECTION_PATTERN, firstPattern.getLeft(),
+                        firstPattern.getRight() + POS_DETECTION_PATTERN.getSize());
+
+        if (secondPattern == null) {
+            throw new QRParsingException();
+        }
+
+        ImmutablePair<Integer, Integer> thirdPattern =
+                searchSpace.find(POS_DETECTION_PATTERN, secondPattern.getLeft(),
+                        secondPattern.getRight() + POS_DETECTION_PATTERN.getSize());
+
+        if (thirdPattern == null) {
+            throw new QRParsingException();
+        }
+
+        int qrCodeSize = thirdPattern.getLeft() - firstPattern.getLeft() + 7;
+
+        if (qrCodeSize != 21 && qrCodeSize != 25) {
+            throw new QRParsingException();
+        }
+
+        BitSquare qrCode = new BitSquare(qrCodeSize);
+
+        if (firstPattern.getLeft().equals(secondPattern.getLeft())) {
+            searchSpace.cachedSlice(firstPattern.getLeft(), firstPattern.getRight(), qrCodeSize, qrCode);
+            // qrCode.print();
+            if (!firstPattern.getRight().equals(thirdPattern.getRight())) {
                 qrCode.rotate90();
             }
         } else {
-            if (firstPattern.getLeft() + 18 < 32) {
-                searchSpace.cachedSlice(firstPattern.getLeft() + 18, firstPattern.getRight(), 7, cache);
-                if (cache.equals(POS_DETECTION_PATTERN)) {
-                    qrCode = new BitSquare(25);
-                    searchSpace.cachedSlice(firstPattern.getLeft(), firstPattern.getRight(), 25, qrCode);
-                    if (!cache.equals(POS_DETECTION_PATTERN)) {
-                        qrCode.rotate90();
-                    }
+            searchSpace.cachedSlice(firstPattern.getLeft(), secondPattern.getRight(), qrCodeSize, qrCode);
+            // qrCode.print();
+            if (firstPattern.getRight().equals(secondPattern.getRight())) {
+                // rotate 270
+                for (int i = 0; i < 3; i++) {
+                    qrCode.rotate90();
+                }
+            } else {
+                // rotate 180
+                for (int i = 0; i < 2; i++) {
+                    qrCode.rotate90();
                 }
             }
         }
-        */
 
-        return null;
+        // qrCode.print();
+
+        // System.out.println(secondPattern);
+        byte[] payload = getQRPayload(qrCode);
+
+        return qrPayloadToMessage(payload);
     }
 
     BitSquare messageToBinarySquare(String message, boolean encrypt) {

@@ -1,6 +1,9 @@
 package cmu.cc.team.spongebob.query2.database;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -48,28 +51,21 @@ public class TweetIntimacyMySQLBackend {
         ArrayList<ContactUser> contacts = new ArrayList<>();
 
         // Get contact information
-        final String sql = "SELECT uid, tweet_text, intimacy_score, "
-                        + "screen_name, description, created_at FROM "
-                        + "(SELECT user2_id AS uid, tweet_text, "
-                        + "intimacy_score, created_at FROM contact_tweet "
-                        + "WHERE user1_id=? UNION "
-                        + "SELECT user1_id AS uid, tweet_text, "
-                        + "intimacy_score, created_at FROM contact_tweet "
-                        + "WHERE user2_id=?) AS tweet "
-                        + "LEFT JOIN contact_user ON tweet.uid=contact_user.id "
-                        + "ORDER BY uid ASC, created_at DESC";
+        final String sql = "SELECT user2_id, tweet_text, intimacy_score, "
+                        + "user2_screen_name, user2_desc, created_at FROM "
+                        + "contact_tweet WHERE user1_id=? "
+                        + "ORDER BY user2_id ASC, created_at DESC";
         try (Connection conn = ds.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             Long lastUid = null;
             stmt.setLong(1, userId);
-            stmt.setLong(2, userId);
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
-                Long uid = rs.getLong("uid");
+                Long uid = rs.getLong("user2_id");
                 String text = rs.getString("tweet_text");
                 double intimacyScore = rs.getDouble("intimacy_score");
-                String screenName = rs.getString("screen_name");
-                String desc = rs.getString("description");
+                String screenName = rs.getString("user2_screen_name");
+                String desc = rs.getString("user2_desc");
                 String createdAt = rs.getString("created_at");
                 if (!uid.equals(lastUid)) {
                     contacts.add(new ContactUser(uid, screenName,

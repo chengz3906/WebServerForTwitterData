@@ -1,3 +1,4 @@
+# (reference)
 # output variables is a way to organize data to be easily queried and
 # shown back to the Terraform user.
 #
@@ -8,12 +9,12 @@
 # This data is outputted when "terraform apply" is called,
 # and can be queried using the "terraform output" command.
 
-output instance_id {
-  description = "The instance ID"
-  value = "${aws_instance.student_on_demand_instance.*.id}"
+output master_public_dns {
+  description = "The public DNS name of the master EC2 instance"
+  value       = "${aws_emr_cluster.database_hbase.master_public_dns}"
 }
 
-output instance_address {
-  description = "The public DNS address of the instance"
-  value = "${aws_instance.student_on_demand_instance.*.public_dns}"
+output "sg_info" {
+  description = "The security group ID"
+  value = "${aws_security_group.hbase_additional_sg.id}"
 }

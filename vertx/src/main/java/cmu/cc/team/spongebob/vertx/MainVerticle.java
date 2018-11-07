@@ -89,5 +89,4 @@ public class MainVerticle extends AbstractVerticle {
         }
         return result;
     }
-
 }

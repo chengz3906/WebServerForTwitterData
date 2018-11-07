@@ -23,6 +23,11 @@ public class QRCodeParser {
     private final BitSquare QR_V2_TEMPLATE;
 
     /**
+     * position detection patter
+     */
+    private final BitSquare POS_DETECTION_PATTERN;
+
+    /**
      * sequences of coordinates that describes how to put a payload.
      */
     private final ArrayList<ImmutablePair<Integer, Integer>> ZIGZAG_V1;
@@ -52,6 +57,7 @@ public class QRCodeParser {
     public QRCodeParser() {
         QR_V1_TEMPLATE = loadQRCodeTemplate(21);
         QR_V2_TEMPLATE = loadQRCodeTemplate(25);
+        POS_DETECTION_PATTERN = loadPositionDetectionPattern();
         ZIGZAG_V1 = loadZigZagFill(21);
         ZIGZAG_V2 = loadZigZagFill(25);
         ENCODE_LOG_MAP_V1 = buildEncodeLogisticMap(21);
@@ -80,16 +86,68 @@ public class QRCodeParser {
         BitSquare searchSpace = hexStringToBinarySquare(encryptedHexString, 32);
         searchSpace.xor(DECODE_LOG_MAP); // decrypt
 
-        BitSquare qrCode = searchSpace.locateAndSlice(QR_V1_TEMPLATE);
-        if (qrCode == null) {
-            qrCode = searchSpace.locateAndSlice(QR_V2_TEMPLATE);
-        }
+        BitSquare cache = new BitSquare(7);
 
-        if (qrCode == null) {
+        ImmutablePair<Integer, Integer> firstPattern =
+                searchSpace.find(POS_DETECTION_PATTERN, 0 ,0);
+
+        if (firstPattern == null) {
             throw new QRParsingException();
         }
 
+        // System.out.println(firstPattern);
+
+        ImmutablePair<Integer, Integer> secondPattern =
+                searchSpace.find(POS_DETECTION_PATTERN, firstPattern.getLeft(),
+                        firstPattern.getRight() + POS_DETECTION_PATTERN.getSize());
+
+        if (secondPattern == null) {
+            throw new QRParsingException();
+        }
+
+        ImmutablePair<Integer, Integer> thirdPattern =
+                searchSpace.find(POS_DETECTION_PATTERN, secondPattern.getLeft(),
+                        secondPattern.getRight() + POS_DETECTION_PATTERN.getSize());
+
+        if (thirdPattern == null) {
+            throw new QRParsingException();
+        }
+
+        int qrCodeSize = thirdPattern.getLeft() - firstPattern.getLeft() + 7;
+
+        if (qrCodeSize != 21 && qrCodeSize != 25) {
+            throw new QRParsingException();
+        }
+
+        BitSquare qrCode = new BitSquare(qrCodeSize);
+
+        if (firstPattern.getLeft().equals(secondPattern.getLeft())) {
+            searchSpace.cachedSlice(firstPattern.getLeft(), firstPattern.getRight(), qrCodeSize, qrCode);
+            // qrCode.print();
+            if (!firstPattern.getRight().equals(thirdPattern.getRight())) {
+                qrCode.rotate90();
+            }
+        } else {
+            searchSpace.cachedSlice(firstPattern.getLeft(), secondPattern.getRight(), qrCodeSize, qrCode);
+            // qrCode.print();
+            if (firstPattern.getRight().equals(secondPattern.getRight())) {
+                // rotate 270
+                for (int i = 0; i < 3; i++) {
+                    qrCode.rotate90();
+                }
+            } else {
+                // rotate 180
+                for (int i = 0; i < 2; i++) {
+                    qrCode.rotate90();
+                }
+            }
+        }
+
+        // qrCode.print();
+
+        // System.out.println(secondPattern);
         byte[] payload = getQRPayload(qrCode);
+
         return qrPayloadToMessage(payload);
     }
 
@@ -174,7 +232,7 @@ public class QRCodeParser {
         byte[] bytes = BigEndianBitSet.toByteArray(payloadBits);
         System.arraycopy(bytes, 0, payload, 0, bytes.length);
 
-       return payload;
+        return payload;
     }
 
     private void putQRPayload(BitSquare template, byte[] payload) {
@@ -214,6 +272,60 @@ public class QRCodeParser {
         }
 
         template.add(payloadQRCode);
+    }
+
+
+    private BitSquare buildEncodeLogisticMap(int size) {
+        int logisticMapSize = (size * size) / 8 + 1;
+        byte[] logisticMap = new byte[logisticMapSize];
+
+        double xi = 0.1;
+        double r = 4;
+        logisticMap[0] = (byte) Math.floor(xi * 255);
+
+        for (int i = 1; i < logisticMap.length; i++) {
+            xi = (r * xi) * (1 - xi);
+            logisticMap[i] = (byte) Math.floor(xi * 255);
+        }
+
+        return new BitSquare(size, BitSet.valueOf(logisticMap)); // bit-level little-endian
+    }
+
+    private BitSquare getQRTemplateBySize(int size) {
+        if (size == 21) {
+            return QR_V1_TEMPLATE;
+        }
+
+        return QR_V2_TEMPLATE;
+    }
+
+    private ArrayList<ImmutablePair<Integer, Integer>> getZigzagFillBySize(int size) {
+        if (size == 21) {
+            return ZIGZAG_V1;
+        }
+
+        return ZIGZAG_V2;
+    }
+
+    private byte errorCode(byte b) {
+        return (byte) (Integer.bitCount((int) b) % 2);
+    }
+
+    private int readQRCodeMessageLength(BitSquare qrCode) {
+        ArrayList<ImmutablePair<Integer, Integer>> zigZagFill =
+                getZigzagFillBySize(qrCode.getSize());
+
+        BitSet bits = new BitSet(8);
+        for (int i = 0; i < 8; i++) {
+            int r = zigZagFill.get(i).getLeft();
+            int c = zigZagFill.get(i).getRight();
+
+            if (qrCode.getBit(r, c)) {
+                bits.set(i);
+            }
+        }
+
+        return (int) BigEndianBitSet.toByte(bits);
     }
 
     private BitSquare loadQRCodeTemplate(int size) {
@@ -292,56 +404,26 @@ public class QRCodeParser {
         return zigzag;
     }
 
-    private BitSquare buildEncodeLogisticMap(int size) {
-        int logisticMapSize = (size * size) / 8 + 1;
-        byte[] logisticMap = new byte[logisticMapSize];
+    private BitSquare loadPositionDetectionPattern() {
+        BitSquare posDectionPattern = new BitSquare(7);
 
-        double xi = 0.1;
-        double r = 4;
-        logisticMap[0] = (byte) Math.floor(xi * 255);
+        ClassLoader classLoader = getClass().getClassLoader();
+        InputStream in = classLoader.getResourceAsStream("QR_position_detection_pattern.txt");
 
-        for (int i = 1; i < logisticMap.length; i++) {
-            xi = (r * xi) * (1 - xi);
-            logisticMap[i] = (byte) Math.floor(xi * 255);
-        }
-
-        return new BitSquare(size, BitSet.valueOf(logisticMap)); // bit-level little-endian
-    }
-
-    private BitSquare getQRTemplateBySize(int size) {
-        if (size == 21) {
-            return QR_V1_TEMPLATE;
-        }
-
-        return QR_V2_TEMPLATE;
-    }
-
-    private ArrayList<ImmutablePair<Integer, Integer>> getZigzagFillBySize(int size) {
-        if (size == 21) {
-            return ZIGZAG_V1;
-        }
-
-        return ZIGZAG_V2;
-    }
-
-    private byte errorCode(byte b) {
-        return (byte) (Integer.bitCount((int) b) % 2);
-    }
-
-    private int readQRCodeMessageLength(BitSquare qrCode) {
-        ArrayList<ImmutablePair<Integer, Integer>> zigZagFill =
-                getZigzagFillBySize(qrCode.getSize());
-
-        BitSet bits = new BitSet(8);
-        for (int i = 0; i < 8; i++) {
-            int r = zigZagFill.get(i).getLeft();
-            int c = zigZagFill.get(i).getRight();
-
-            if (qrCode.getBit(r, c)) {
-                bits.set(i);
+        try (Scanner scanner = new Scanner(in)) {
+            int row = 0;
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine();
+                for (int i = 0; i < 7; i++) {
+                    char c = line.charAt(i);
+                    if (c == '1') {
+                        posDectionPattern.setBit(row, i);
+                    }
+                }
+                row++;
             }
         }
 
-        return (int) BigEndianBitSet.toByte(bits);
+        return posDectionPattern;
     }
 }

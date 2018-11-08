@@ -12,7 +12,7 @@ public class KeyValueLRUCache {
     private final ConcurrentHashMap<Long, String> keyTimestamp;
     private final PriorityQueue<Long> timestamps;
 
-    private final long maxItemNumber;
+    private long maxItemNumber;
 
     private static KeyValueLRUCache keyValueLRUCache;
     private static final Object InstantiationLock = new Object();
@@ -59,5 +59,9 @@ public class KeyValueLRUCache {
             keyTimestamp.clear();
             timestamps.clear();
         }
+    }
+
+    public void setMaxItemNumber(long maxItemNumber) {
+        this.maxItemNumber = maxItemNumber;
     }
 }

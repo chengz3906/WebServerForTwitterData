@@ -3,7 +3,6 @@ package cmu.cc.team.spongebob.query2.database;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
@@ -14,17 +13,7 @@ import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.client.Table;
-import org.apache.hadoop.hbase.filter.BinaryComparator;
-import org.apache.hadoop.hbase.filter.BinaryPrefixComparator;
-import org.apache.hadoop.hbase.filter.CompareFilter;
-import org.apache.hadoop.hbase.filter.Filter;
-<<<<<<< HEAD
-import org.apache.hadoop.hbase.filter.RowFilter;
-=======
-import org.apache.hadoop.hbase.filter.FilterList;
-import org.apache.hadoop.hbase.filter.RowFilter;
-import org.apache.hadoop.hbase.filter.SingleColumnValueFilter;
->>>>>>> query2_servlet_newmysql
+import org.apache.hadoop.hbase.filter.*;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -34,11 +23,7 @@ public class TweetIntimacyHBaseBackend {
     /**
      * The private IP address of HBase master node.
      */
-<<<<<<< HEAD
     private static String zkAddr = System.getenv("HBASE_DNS");
-=======
-    private static String zkAddr = System.getenv("MYSQL_DNS");
->>>>>>> query2_servlet_newmysql
     /**
      * The name of your HBase table.
      */
@@ -62,16 +47,6 @@ public class TweetIntimacyHBaseBackend {
      */
     private static Configuration conf;
 
-    private static final byte[] user1Family = Bytes.toBytes("user1");
-    private static final byte[] user2Family = Bytes.toBytes("user2");
-    private static final byte[] tweetFamily = Bytes.toBytes("tweet");
-    private static final byte[] idBytes = Bytes.toBytes("id");
-    private static final byte[] screenNameBytes = Bytes.toBytes("screen_name");
-    private static final byte[] descriptionBytes = Bytes.toBytes("description");
-    private static final byte[] textBytes = Bytes.toBytes("text");
-    private static final byte[] createdAtBytes = Bytes.toBytes("created_at");
-    private static final byte[] intimacyScoreBytes = Bytes.toBytes("intimacy_score");
-
     public TweetIntimacyHBaseBackend() {
         LOGGER.setLevel(Level.OFF);
         if (!zkAddr.matches("\\d+.\\d+.\\d+.\\d+")) {
@@ -84,58 +59,30 @@ public class TweetIntimacyHBaseBackend {
     }
 
     public ArrayList<ContactUser> query(Long userId, String phrase) {
-        HashMap<Long, Integer> contactsIndex = new HashMap<>();
         ArrayList<ContactUser> contacts = new ArrayList<>();
 
         // Get contact information
         try (Connection conn = ConnectionFactory.createConnection(conf);
-<<<<<<< HEAD
              Table twitterTable = conn.getTable(tableName)) {
             Scan scan = new Scan();
             byte[] userIdBytes = Bytes.toBytes(userId);
-            BinaryComparator comp = new BinaryComparator(userIdBytes);
-            Filter filter = new RowFilter(
-                    CompareFilter.CompareOp.EQUAL, comp);
-//            scan.setFilter(filter);
-            scan.setLimit(1);
+            PrefixFilter filter = new PrefixFilter(userIdBytes);
+            scan.setFilter(filter);
             ResultScanner rs = twitterTable.getScanner(scan);
             Long lastUid = null;
-=======
-             Table tweetIntimacyTable = conn.getTable(tableName)) {
-            Scan scan = new Scan();
-            byte[] userIdBytes = Bytes.toBytes(userId);
-            BinaryComparator compId = new BinaryComparator(userIdBytes);
-            BinaryPrefixComparator compKey = new BinaryPrefixComparator(userIdBytes);
-            Filter filterId = new SingleColumnValueFilter(
-                    user1Family, idBytes, CompareFilter.CompareOp.EQUAL, compId
-            );
-            Filter filterKey = new RowFilter(
-                    CompareFilter.CompareOp.EQUAL, compKey
-            );
-            FilterList filterList = new FilterList(FilterList.Operator.MUST_PASS_ALL);
-            filterList.addFilter(filterId);
-            filterList.addFilter(filterKey);
-            scan.setFilter(filterList);
-            ResultScanner rs = tweetIntimacyTable.getScanner(scan);
->>>>>>> query2_servlet_newmysql
             for (Result r = rs.next(); r != null; r = rs.next()) {
-                Long id = Bytes.toLong(r.getValue(user2Family, idBytes));
-                String screenName = Bytes.toString(r.getValue(user2Family, screenNameBytes));
-                String description = Bytes.toString(r.getValue(user2Family, descriptionBytes));
+                Long id = Bytes.toLong(r.getValue(userFamily, idBytes));
+                String screenName = Bytes.toString(r.getValue(userFamily, screenNameBytes));
+                String description = Bytes.toString(r.getValue(userFamily, descriptionBytes));
                 String text = Bytes.toString(r.getValue(tweetFamily, textBytes));
                 String createdAt = Bytes.toString(r.getValue(tweetFamily, createdAtBytes));
-                double intimacyScore = Bytes.toDouble(r.getValue(tweetFamily, intimacyScoreBytes));
-<<<<<<< HEAD
-                System.out.println(screenName+" "+description+" "+text+" "+createdAt+" "+intimacyScore);
+                double intimacyScore = Bytes.toDouble(r.getValue(userFamily, intimacyScoreBytes));
                 if (!id.equals(lastUid)) {
-=======
-                if (!contactsIndex.containsKey(id)) {
-                    contactsIndex.put(id, contacts.size());
->>>>>>> query2_servlet_newmysql
                     contacts.add(new ContactUser(id, screenName,
                             description, intimacyScore));
+                    lastUid = id;
                 }
-                contacts.get(contactsIndex.get(id)).addTweet(text, phrase, createdAt);
+                contacts.get(contacts.size() - 1).addTweet(text, phrase, createdAt);
             }
             rs.close();
         } catch (IOException e) {

@@ -1,14 +1,9 @@
-package cmu.cc.team.spongebob.query1.qrcode;
+package cmu.cc.team.spongebob.qrcode;
 
-import cmu.cc.team.spongebob.query1.qrcode.utils.BitSquare;
-import org.apache.commons.lang3.StringUtils;
+import cmu.cc.team.spongebob.qrcode.utils.BitSquare;
 import org.junit.jupiter.api.Test;
 
-import java.util.BitSet;
-
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 class QRCodeParserTest {

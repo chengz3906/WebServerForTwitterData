@@ -1,10 +1,11 @@
 package cmu.cc.team.spongebob.vertx;
 
-import cmu.cc.team.spongebob.query1.qrcode.QRCodeParser;
+import cmu.cc.team.spongebob.qrcode.QRCodeParser;
 import cmu.cc.team.spongebob.utils.caching.KeyValueLRUCache;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
+import io.vertx.core.WorkerExecutor;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -14,20 +15,19 @@ import io.vertx.ext.web.RoutingContext;
 public class MainVerticle extends AbstractVerticle {
     private static final Logger LOGGER = LoggerFactory.getLogger(MainVerticle.class);
 
-    private QRCodeParser parser;
-    private KeyValueLRUCache cache;
+    private final QRCodeParser qrCodeParser;
+    private final KeyValueLRUCache keyValueCache;
 
     public MainVerticle () {
-        parser = new QRCodeParser();
-        cache = KeyValueLRUCache.getInstance();
+        qrCodeParser = new QRCodeParser();
+        keyValueCache = KeyValueLRUCache.getInstance();
+        // TODO experiment with different pool size
     }
 
     @Override
     public void start(Future<Void> startFuture) throws Exception {
-        parser = new QRCodeParser();
-        cache = KeyValueLRUCache.getInstance();
         Future<Void> steps = startHttpServer();
-        startFuture.complete();
+        steps.setHandler(startFuture.completer());
     }
 
     private Future<Void> startHttpServer() {
@@ -37,7 +37,7 @@ public class MainVerticle extends AbstractVerticle {
         Router router = Router.router(vertx);
         router.get("/").handler(this::indexHandler);
         router.get("/q1").handler(this::qrcodeHandler);
-        router.get("/q2").handler(this::mysqlHandler);
+        router.get("/q2").handler(this::tweetIntimacyHandler);
 
         server
                 .requestHandler(router::accept)
@@ -63,31 +63,33 @@ public class MainVerticle extends AbstractVerticle {
 
         String requestKey = String.format("q1/type=%s&data=%s", type, message);
         // look for it in key value store
-        String resp = cache.get(requestKey);
+        String resp = keyValueCache.get(requestKey);
 
         if (resp == null) {
-            resp = executeQRCodeRequest(type, message);
-            cache.put(requestKey, resp);
+            if (type.equals("encode")) {
+                resp = qrCodeParser.encode(message, true);
+            } else if (type.equals("decode")) {
+                try {
+                    resp = qrCodeParser.decode(message);
+                } catch (QRCodeParser.QRParsingException e) {
+                    resp = "decoding error";
+                }
+            }
+            keyValueCache.put(requestKey, resp);
         }
         context.response().end(resp);
     }
 
-    private void mysqlHandler(RoutingContext context) {
-        context.response().end("TODO: add MySQL handler.");
+    private void tweetIntimacyHandler(RoutingContext context) {
+        vertx.executeBlocking(future -> {
+            // TODO call tweet intimacy backend handler
+            future.complete("TODO: add MySQL handler.");
+        }, false, res -> {
+            context.response().end((String) res.result());
+        });
     }
 
-    private String executeQRCodeRequest(String type, String message) {
-        String result = "";
-        if (type.equals("encode")) {
-            result = parser.encode(message, true);
-        } else if (type.equals("decode")) {
-            try {
-                result = parser.decode(message);
-            } catch (QRCodeParser.QRParsingException e) {
-                result = "decoding error";
-            }
-        }
-        return result;
+    private void topicWordHandler(RoutingContext context) {
+        // TODO query 3
     }
-
 }

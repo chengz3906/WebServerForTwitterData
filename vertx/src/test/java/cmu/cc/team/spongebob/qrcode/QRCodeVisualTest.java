@@ -1,6 +1,6 @@
-package cmu.cc.team.spongebob.query1.qrcode;
+package cmu.cc.team.spongebob.qrcode;
 
-import cmu.cc.team.spongebob.query1.qrcode.utils.BitSquare;
+import cmu.cc.team.spongebob.qrcode.utils.BitSquare;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 

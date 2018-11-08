@@ -9,9 +9,18 @@
         <servlet-class>cmu.cc.team.spongebob.query2.servlet.TwitterIntimacyServlet</servlet-class>
         <load-on-startup>1</load-on-startup>
     </servlet>
+    <servlet>
+        <servlet-name>CacheServlet</servlet-name>
+        <servlet-class>cmu.cc.team.spongebob.utils.servlet.CacheServlet</servlet-class>
+        <load-on-startup>2</load-on-startup>
+    </servlet>
 
     <servlet-mapping>
         <servlet-name>TwitterIntimacyServlet</servlet-name>
         <url-pattern>/</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>CacheServlet</servlet-name>
+        <url-pattern>/cache</url-pattern>
     </servlet-mapping>
 </web-app>

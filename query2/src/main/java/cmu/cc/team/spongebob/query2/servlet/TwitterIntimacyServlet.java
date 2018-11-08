@@ -27,10 +27,12 @@ public class TwitterIntimacyServlet extends HttpServlet {
     public void doGet(HttpServletRequest request, HttpServletResponse response)
         throws IOException {
 
+        // Print team info
         response.setCharacterEncoding("UTF-8");
         PrintWriter out = response.getWriter();
         out.print(String.format("%s,%s\n", TEAMID, TEAM_AWS_ACCOUNT_ID));
 
+        // Get request info
         String phrase = request.getParameter("phrase");
         String userIdStr = request.getParameter("user_id");
         String nStr = request.getParameter("n");

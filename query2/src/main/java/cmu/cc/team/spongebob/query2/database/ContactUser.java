@@ -48,12 +48,16 @@ public class ContactUser implements Comparable<ContactUser> {
     public int compareTo(ContactUser other) {
         if (this.getScore() > other.getScore()) {
             return -1;
-        } else if (this.getScore() < other.getScore()) {
+        }
+        if (this.getScore() < other.getScore()) {
             return 1;
-        } else if (this.userId < other.getUserId()) {
+        }
+        if (this.userId < other.userId) {
             return -1;
-        } else if (this.userId > other.getUserId()) {
+        }
+        if (this.userId > other.userId) {
             return 1;
-        } else return 0;
+        }
+        return 0;
     }
 }

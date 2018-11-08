@@ -1,6 +1,7 @@
 package cmu.cc.team.spongebob.query2.servlet;
 
 import cmu.cc.team.spongebob.query2.database.ContactUser;
+import cmu.cc.team.spongebob.query2.database.TweetIntimacyHBaseBackend;
 import cmu.cc.team.spongebob.query2.database.TweetIntimacyMySQLBackend;
 import cmu.cc.team.spongebob.utils.caching.KeyValueLRUCache;
 
@@ -13,13 +14,13 @@ import javax.servlet.http.HttpServletResponse;
 
 
 public class TwitterIntimacyServlet extends HttpServlet {
-    private TweetIntimacyMySQLBackend dbReader;
+    private TweetIntimacyHBaseBackend dbReader;
     private KeyValueLRUCache cache;
     private final String TEAMID = System.getenv("TEAMID");
     private final String TEAM_AWS_ACCOUNT_ID = System.getenv("TEAM_AWS_ACCOUNT_ID");
 
     public void init() {
-        dbReader = new TweetIntimacyMySQLBackend();
+        dbReader = new TweetIntimacyHBaseBackend();
         cache = KeyValueLRUCache.getInstance();
     }
 

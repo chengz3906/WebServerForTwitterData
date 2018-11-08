@@ -1,7 +1,6 @@
 package cmu.cc.team.spongebob.query2.database;
 
 import java.io.IOException;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -14,16 +13,10 @@ import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.client.Table;
-import org.apache.hadoop.hbase.client.coprocessor.AggregationClient;
-import org.apache.hadoop.hbase.client.coprocessor.LongColumnInterpreter;
 import org.apache.hadoop.hbase.filter.BinaryComparator;
 import org.apache.hadoop.hbase.filter.CompareFilter;
 import org.apache.hadoop.hbase.filter.Filter;
-import org.apache.hadoop.hbase.filter.FilterList;
-import org.apache.hadoop.hbase.filter.RegexStringComparator;
 import org.apache.hadoop.hbase.filter.RowFilter;
-import org.apache.hadoop.hbase.filter.SingleColumnValueFilter;
-import org.apache.hadoop.hbase.filter.SubstringComparator;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -33,15 +26,24 @@ public class TweetIntimacyHBaseBackend {
     /**
      * The private IP address of HBase master node.
      */
-    private static String zkAddr = "172.31.1.50";
+    private static String zkAddr = System.getenv("HBASE_DNS");
     /**
      * The name of your HBase table.
      */
-    private static TableName tableName = TableName.valueOf("twitter");
+    private static TableName tableName = TableName.valueOf("contact_tweet");
     /**
      * Logger.
      */
     private static final Logger LOGGER = Logger.getRootLogger();
+
+    private static final byte[] userFamily = Bytes.toBytes("user2");
+    private static final byte[] tweetFamily = Bytes.toBytes("tweet");
+    private static final byte[] idBytes = Bytes.toBytes("id");
+    private static final byte[] screenNameBytes = Bytes.toBytes("screen_name");
+    private static final byte[] descriptionBytes = Bytes.toBytes("description");
+    private static final byte[] textBytes = Bytes.toBytes("text");
+    private static final byte[] createdAtBytes = Bytes.toBytes("created_at");
+    private static final byte[] intimacyScoreBytes = Bytes.toBytes("intimacy_score");
 
     /**
      * Configuration.
@@ -61,25 +63,18 @@ public class TweetIntimacyHBaseBackend {
 
     public ArrayList<ContactUser> query(Long userId, String phrase) {
         ArrayList<ContactUser> contacts = new ArrayList<>();
-        byte[] userFamily = Bytes.toBytes("user2");
-        byte[] tweetFamily = Bytes.toBytes("tweet");
-        byte[] idBytes = Bytes.toBytes("id");
-        byte[] screenNameBytes = Bytes.toBytes("screen_name");
-        byte[] descriptionBytes = Bytes.toBytes("description");
-        byte[] textBytes = Bytes.toBytes("text");
-        byte[] createdAtBytes = Bytes.toBytes("created_at");
-        byte[] intimacyScoreBytes = Bytes.toBytes("intimacy_score");
 
         // Get contact information
         try (Connection conn = ConnectionFactory.createConnection(conf);
-             Table bizTable = conn.getTable(tableName)) {
+             Table twitterTable = conn.getTable(tableName)) {
             Scan scan = new Scan();
             byte[] userIdBytes = Bytes.toBytes(userId);
             BinaryComparator comp = new BinaryComparator(userIdBytes);
             Filter filter = new RowFilter(
                     CompareFilter.CompareOp.EQUAL, comp);
-            scan.setFilter(filter);
-            ResultScanner rs = bizTable.getScanner(scan);
+//            scan.setFilter(filter);
+            scan.setLimit(1);
+            ResultScanner rs = twitterTable.getScanner(scan);
             Long lastUid = null;
             for (Result r = rs.next(); r != null; r = rs.next()) {
                 Long id = Bytes.toLong(r.getValue(userFamily, idBytes));
@@ -88,7 +83,8 @@ public class TweetIntimacyHBaseBackend {
                 String text = Bytes.toString(r.getValue(tweetFamily, textBytes));
                 String createdAt = Bytes.toString(r.getValue(tweetFamily, createdAtBytes));
                 double intimacyScore = Bytes.toDouble(r.getValue(tweetFamily, intimacyScoreBytes));
-                if (id.equals(lastUid)) {
+                System.out.println(screenName+" "+description+" "+text+" "+createdAt+" "+intimacyScore);
+                if (!id.equals(lastUid)) {
                     contacts.add(new ContactUser(id, screenName,
                             description, intimacyScore));
                     lastUid = id;

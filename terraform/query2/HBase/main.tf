@@ -43,6 +43,26 @@ resource "aws_security_group" "hbase_additional_sg" {
     ]
   }
 
+  ingress {
+    from_port = 16000
+    to_port   = 16030
+    protocol  = "tcp"
+
+    cidr_blocks = [
+      "0.0.0.0/0",
+    ]
+  }
+
+  ingress {
+    from_port = 2181
+    to_port   = 2181
+    protocol  = "tcp"
+
+    cidr_blocks = [
+      "0.0.0.0/0",
+    ]
+  }
+
   tags {
     Name = "EMR additional security group"
   }
@@ -107,7 +127,7 @@ resource "aws_emr_cluster" "database_hbase" {
 
   tags {
     Name    = "HBase Cluster"
-    Project = "Phase1"
+    Project = "Phase2"
   }
 
   service_role = "EMR_DefaultRole"

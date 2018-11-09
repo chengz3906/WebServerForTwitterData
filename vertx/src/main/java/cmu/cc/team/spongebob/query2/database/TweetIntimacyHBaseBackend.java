@@ -40,7 +40,7 @@ public class TweetIntimacyHBaseBackend {
     private static final byte[] descriptionBytes = Bytes.toBytes("description");
     private static final byte[] textBytes = Bytes.toBytes("text");
     private static final byte[] createdAtBytes = Bytes.toBytes("created_at");
-    private static final byte[] intimacyScoreBytes = Bytes.toBytes("intimacy_score");
+    private static final byte[] intimacyScoreBytes = Bytes.toBytes("intimacy");
 
     /**
      * Configuration.
@@ -70,20 +70,20 @@ public class TweetIntimacyHBaseBackend {
 //            Filter filter = new RowFilter(
 //                    CompareFilter.CompareOp.EQUAL, comp) {
 //            };
-            PrefixFilter filter = new PrefixFilter(userIdBytes);
-            scan.setFilter(filter);
+
+//            PrefixFilter filter = new PrefixFilter(userIdBytes);
+//            scan.setFilter(filter);
+            scan.setRowPrefixFilter(userIdBytes);
             ResultScanner rs = twitterTable.getScanner(scan);
             Long lastUid = null;
-            System.out.println("debug1");
             for (Result r = rs.next(); r != null; r = rs.next()) {
-                System.out.println("debug2");
                 Long id = Bytes.toLong(r.getValue(userFamily, idBytes));
                 String screenName = Bytes.toString(r.getValue(userFamily, screenNameBytes));
                 String description = Bytes.toString(r.getValue(userFamily, descriptionBytes));
                 String text = Bytes.toString(r.getValue(tweetFamily, textBytes));
                 String createdAt = Bytes.toString(r.getValue(tweetFamily, createdAtBytes));
                 double intimacyScore = Bytes.toDouble(r.getValue(userFamily, intimacyScoreBytes));
-                System.out.println(screenName+" "+description+" "+text+" "+createdAt+" "+intimacyScore);
+//                System.out.println(screenName+" "+description+" "+text+" "+createdAt+" "+intimacyScore);
                 if (!id.equals(lastUid)) {
                     contacts.add(new ContactUser(id, screenName,
                             description, intimacyScore));

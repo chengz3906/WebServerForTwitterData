@@ -3,8 +3,8 @@ package cmu.cc.team.spongebob.vertx;
 import cmu.cc.team.spongebob.query1.qrcode.QRCodeParser;
 import cmu.cc.team.spongebob.query2.database.ContactUser;
 import cmu.cc.team.spongebob.query2.database.TweetIntimacyHBaseBackend;
-import cmu.cc.team.spongebob.utils.caching.KeyValueLRUCache;
 import cmu.cc.team.spongebob.query2.database.TweetIntimacyMySQLBackend;
+import cmu.cc.team.spongebob.utils.caching.KeyValueLRUCache;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
@@ -22,8 +22,9 @@ public class MainVerticle extends AbstractVerticle {
     private static final Logger LOGGER = LoggerFactory.getLogger(MainVerticle.class);
     private final String TEAMID = System.getenv("TEAMID");
     private final String TEAM_AWS_ACCOUNT_ID = System.getenv("TEAM_AWS_ACCOUNT_ID");
-    // private TweetIntimacyMySQLBackend dbReader;
-    private TweetIntimacyHBaseBackend dbReader;
+    private static WorkerExecutor executor;
+    private TweetIntimacyMySQLBackend dbReader;
+//    private TweetIntimacyHBaseBackend dbReader;
 
     private QRCodeParser parser;
     private KeyValueLRUCache cache;
@@ -36,9 +37,10 @@ public class MainVerticle extends AbstractVerticle {
     @Override
     public void start(Future<Void> startFuture) throws Exception {
         parser = new QRCodeParser();
-        // dbReader = new TweetIntimacyMySQLBackend();
-        dbReader = new TweetIntimacyHBaseBackend();
+        dbReader = new TweetIntimacyMySQLBackend();
+//        dbReader = new TweetIntimacyHBaseBackend();
         cache = KeyValueLRUCache.getInstance();
+        executor = vertx.createSharedWorkerExecutor("query2-worker-pool", 50);
         Future<Void> steps = startHttpServer();
         startFuture.complete();
     }
@@ -50,7 +52,7 @@ public class MainVerticle extends AbstractVerticle {
         Router router = Router.router(vertx);
         router.get("/").handler(this::indexHandler);
         router.get("/q1").handler(this::qrcodeHandler);
-        router.get("/q2").handler(this::mysqlHandler);
+        router.get("/q2").handler(this::tweetIntimacyHandler);
 
         server
                 .requestHandler(router::accept)
@@ -83,6 +85,64 @@ public class MainVerticle extends AbstractVerticle {
             cache.put(requestKey, resp);
         }
         context.response().end(resp);
+    }
+
+    private String queryDatabase(Long userId, String phrase, int n) {
+        ArrayList<ContactUser> contactUsers = dbReader.query(userId, phrase);
+        n = n > contactUsers.size() ? contactUsers.size() : n;
+        String info = "";
+        for (int i = 0; i < n; ++i) {
+            ContactUser contactUser = contactUsers.get(i);
+            info += String.format("%s\t%s\t%s",
+                    contactUser.getUserName(),
+                    contactUser.getUserDescription(),
+                    contactUser.getTweetText());
+
+            // output new line if it is not the last line
+            if (i < n - 1) {
+                info += "\n";
+            }
+        }
+        return info;
+    }
+    private void tweetIntimacyHandler(RoutingContext context) {
+        String resp = String.format("%s,%s\n", TEAMID, TEAM_AWS_ACCOUNT_ID);
+        String phrase = context.request().getParam("phrase");
+        String userIdStr = context.request().getParam("user_id");
+        String nStr = context.request().getParam("n");
+        if (phrase == null || phrase.isEmpty()
+                || userIdStr == null || userIdStr.isEmpty()
+                || nStr == null || nStr.isEmpty()) {
+            context.response().end(resp);
+            return;
+        }
+        Long userId = Long.parseLong(userIdStr);
+        int n = Integer.parseInt(nStr);
+
+        // Query cache
+        String requestKey = String.format("q2/user_id=%s&phrase=%s&n=%s",
+                userIdStr, phrase, nStr);
+        String info = cache.get(requestKey);
+        if (info != null) {
+            context.response().end(resp + info);
+            return;
+        }
+
+        executor.<String>executeBlocking(future -> {
+            String queryRes = queryDatabase(userId, phrase, n);
+            try {
+                context.response().end(resp + queryRes);
+            } catch (IllegalStateException e) {
+                System.out.println("Response closed");
+            }
+            future.complete(queryRes);
+        }, false, res-> {
+            if (res.succeeded()) {
+                cache.put(requestKey, res.result());
+            } else {
+                res.cause().printStackTrace();
+            }
+        });
     }
 
     private void mysqlHandler(RoutingContext context) {

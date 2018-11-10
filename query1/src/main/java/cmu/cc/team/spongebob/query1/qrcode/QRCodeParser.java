@@ -100,9 +100,10 @@ public class QRCodeParser {
         for (int i = 0; i < payload.length; i++) {
             for (int j = 0; j < 8; j++) {
                 if (((payload[i] >> (7 - j)) & 1) == 1) {
-                    int intInd = fillSeq.get(i * 8 + j) / 32;
-                    int bitInd = fillSeq.get(i * 8 + j) % 32;
-                    qrCode[intInd] = qrCode[intInd] | (1 << bitInd);
+                    int ind = i * 8 + j;
+                    int intInd = fillSeq.get(ind) / 32;
+                    int bitInd = fillSeq.get(ind) % 32;
+                    qrCode[intInd] = qrCode[intInd] | (1 << (31 - bitInd));
                 }
             }
         }
@@ -118,7 +119,7 @@ public class QRCodeParser {
             if (QR_PAYLOAD_PAD.get(padBitInd % 16)) {
                 int intInd = indToFill / 32;
                 int bitInd = indToFill % 32;
-                qrCode[intInd] = qrCode[intInd] | (1 << bitInd);
+                qrCode[intInd] = qrCode[intInd] | (1 << (31 - bitInd));
             }
             padBitInd++;
         }
@@ -130,12 +131,12 @@ public class QRCodeParser {
             qrCode = integerArrayXor(qrCode, logisticMap);
         }
 
-        qrCode[qrCode.length - 1] = qrCode[qrCode.length - 1] << (32 - (qrCodeSize * qrCodeSize % 32));
+        qrCode[qrCode.length - 1] = qrCode[qrCode.length - 1] >>> (32 - (qrCodeSize * qrCodeSize % 32));
 
         // encode qrCode to hex string
         StringBuilder stringBuilder = new StringBuilder();
         for (Integer i : qrCode) {
-            stringBuilder.append(String.format("0x%x", Integer.reverse(i)).toLowerCase());
+            stringBuilder.append(String.format("0x%x", i).toLowerCase());
         }
 
         return stringBuilder.toString();
@@ -279,7 +280,7 @@ public class QRCodeParser {
                     if (line.charAt(c) == '1') {
                         int intInd = (r * size + c) / 32;
                         int bitInd = (r * size + c) % 32;
-                        template[intInd] =  template[intInd] | (1 << bitInd);
+                        template[intInd] =  template[intInd] | (1 << (31 - bitInd));
                     }
                 }
                 r++;
@@ -365,10 +366,8 @@ public class QRCodeParser {
         int[] logisticMap = new int[integerLen];
 
         for (int i = 0; i < integerLen; i++) {
-            logisticMap[i] = logisticMapByteBuffer.getInt(i * 4);
+            logisticMap[i] = Integer.reverse(logisticMapByteBuffer.getInt(i * 4));
         }
-
-        // logisticMap[integerLen - 1] = logisticMap[integerLen - 1] >>> (32 - (size * size % 32));
 
         return logisticMap; // bit-level little-endian
     }

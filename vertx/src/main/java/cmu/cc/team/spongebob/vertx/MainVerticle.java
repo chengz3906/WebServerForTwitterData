@@ -22,7 +22,6 @@ public class MainVerticle extends AbstractVerticle {
     private static final Logger LOGGER = LoggerFactory.getLogger(MainVerticle.class);
     private final String TEAMID = System.getenv("TEAMID");
     private final String TEAM_AWS_ACCOUNT_ID = System.getenv("TEAM_AWS_ACCOUNT_ID");
-    private static WorkerExecutor executor;
     private TweetIntimacyMySQLBackend dbReader;
 //    private TweetIntimacyHBaseBackend dbReader;
 
@@ -40,7 +39,6 @@ public class MainVerticle extends AbstractVerticle {
         dbReader = new TweetIntimacyMySQLBackend();
 //        dbReader = new TweetIntimacyHBaseBackend();
         cache = KeyValueLRUCache.getInstance();
-        executor = vertx.createSharedWorkerExecutor("query2-worker-pool", 50);
         Future<Void> steps = startHttpServer();
         startFuture.complete();
     }
@@ -128,6 +126,8 @@ public class MainVerticle extends AbstractVerticle {
             return;
         }
 
+        WorkerExecutor executor;
+        executor = vertx.createSharedWorkerExecutor("query2-worker-pool", 50);
         executor.<String>executeBlocking(future -> {
             String queryRes = queryDatabase(userId, phrase, n);
             try {
@@ -142,6 +142,7 @@ public class MainVerticle extends AbstractVerticle {
             } else {
                 res.cause().printStackTrace();
             }
+            executor.close();
         });
     }
 

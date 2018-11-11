@@ -1,26 +1,28 @@
 package cmu.cc.team.spongebob.etl.phase1.s3_to_hfiles;
 
+import com.amazonaws.auth.profile.ProfileCredentialsProvider;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.*;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.*;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.util.Bytes;
-import org.apache.hadoop.util.Tool;
-import org.apache.hadoop.util.ToolRunner;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 
-public class LoadHBase extends Configured implements Tool {
-    private static final Log LOGGER = LogFactory.getLog(HBaseETLJob.class);
+public class LoadHBase {
 
     private static final JsonParser jsonParser = new JsonParser();
     private static final byte[] COLF_USER2 = "user2".getBytes();
@@ -33,34 +35,83 @@ public class LoadHBase extends Configured implements Tool {
     private static final byte[] COL_TWEET_CREATED_AT = "created_at".getBytes();
 
     public static void main(String[] args) throws Exception {
-        int status = ToolRunner.run(HBaseConfiguration.create(), new HBaseETLJob(), args);
-        System.exit(status);
-    }
+        String clientRegion = "us-east-1";
+        String bucketName = "cmucc-team-phase2";
+        AmazonS3 s3Client = AmazonS3ClientBuilder.standard()
+                .withCredentials(new ProfileCredentialsProvider())
+                .withRegion(clientRegion)
+                .build();
+        List<String> keyList = getKeyList(s3Client, bucketName);
 
-    @Override
-    public int run(String[] args) throws Exception {
-        try (Connection connection = ConnectionFactory.createConnection(getConf());
+        Configuration config = HBaseConfiguration.create();
+        try (Connection connection = ConnectionFactory.createConnection(config);
              Admin admin = connection.getAdmin()) {
-            TableName tableName = TableName.valueOf(args[2]);
+            TableName tableName = TableName.valueOf(args[0]);
 
             createTable(admin, tableName);
             Table table = connection.getTable(tableName);
 
-            LOGGER.info("start loading HBase...");
+            System.out.println("start loading HBase...");
 
-            try(BufferedReader br = new BufferedReader(new FileReader(args[0]))) {
-                for(String line; (line = br.readLine()) != null; ) {
-                    JsonObject jsonObject = jsonParser.parse(line).getAsJsonObject();
-                    putOneJSON(jsonObject, table);
-                }
+            for (String key : keyList) {
+                DownloadObject(s3Client, bucketName, key);
+                loadOneJSON(key, table, Integer.parseInt(args[1]));
+                DeleteLocalFile(key);
             }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
-        LOGGER.info("HBase ETL Job started...");
-        return 1;
+        System.out.println("HBase ETL Job finished...");
     }
 
-    private static void putOneJSON(JsonObject rowJSON, Table table) throws IOException {
+    private static List<String> getKeyList(AmazonS3 s3Client, String bucketName) {
+        List<String> keyList = new ArrayList<>();
+        ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucketName)
+                .withPrefix("contact_tweet_json_hbase");
+        ListObjectsV2Result result;
+        do {
+            result = s3Client.listObjectsV2(req);
+
+            for (S3ObjectSummary objectSummary : result.getObjectSummaries()) {
+                String key = objectSummary.getKey();
+                if (key.endsWith(".json")) {
+                    keyList.add(key);
+                }
+            }
+            // If there are more than maxKeys keys in the bucket, get a continuation token
+            // and list the next objects.
+            String token = result.getNextContinuationToken();
+            req.setContinuationToken(token);
+        } while (result.isTruncated());
+
+        return keyList;
+    }
+
+    private static void loadOneJSON(String filename, Table table, int batchSize) {
+        System.out.println("Write to HBase...");
+        final long startTime = System.currentTimeMillis();
+        List<Put> putList = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
+            for (String line; (line = br.readLine()) != null; ) {
+                JsonObject jsonObject = jsonParser.parse(line).getAsJsonObject();
+                putList.add(putOneJSON(jsonObject, table));
+                if (putList.size() == batchSize) {
+                    table.put(putList);
+                    putList.clear();
+                }
+            }
+            if (putList.size() != 0) {
+                table.put(putList);
+                putList.clear();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        final long endTime = System.currentTimeMillis();
+        System.out.println(String.format("Load a json in %d s", (endTime - startTime) / 1000));
+    }
+    private static Put putOneJSON(JsonObject rowJSON, Table table) throws IOException {
         // row key
         long user1ID = rowJSON.get("user1_id").getAsLong();
         long rowKeyID = rowJSON.get("row_key_id").getAsLong();
@@ -101,12 +152,13 @@ public class LoadHBase extends Configured implements Tool {
         String tweetCreatedAt = rowJSON.get("created_at").getAsString();
         put.addColumn(COLF_TWEET, COL_TWEET_CREATED_AT, tweetCreatedAt.getBytes());
 
-        table.put(put);
+//        table.put(put);
+        return put;
     }
 
     private static void createTable(Admin admin, TableName tableName) throws IOException {
         if (admin.tableExists(tableName)) {
-            LOGGER.warn("htable already exists, deleting htable...");
+            System.out.println("htable already exists, deleting htable...");
             try {
                 admin.disableTable(tableName);
             } catch (TableNotEnabledException e) {
@@ -118,7 +170,25 @@ public class LoadHBase extends Configured implements Tool {
         HTableDescriptor htd = new HTableDescriptor(tableName);
         htd.addFamily(new HColumnDescriptor(Bytes.toBytes("user2")));
         htd.addFamily(new HColumnDescriptor(Bytes.toBytes("tweet")));
-        LOGGER.info("creating htable...");
+        System.out.println("creating htable...");
         admin.createTable(htd);
     }
+
+    private static void DownloadObject(AmazonS3 s3Client, String bucketName, String key) {
+        System.out.println("Downloading " + key + "...");
+        File localFile = new File(key);
+        ObjectMetadata metadata = s3Client.getObject(new GetObjectRequest(bucketName, key),
+                localFile);
+        System.out.println("Finished download.");
+    }
+
+    private static void DeleteLocalFile(String filename) {
+        File file = new File(filename);
+        if (file.delete()) {
+            System.out.println("Delete file.");
+        } else {
+            System.out.println("Fail to delete file.");
+        }
+    }
+
 }

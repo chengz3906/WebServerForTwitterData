@@ -21,8 +21,11 @@ import java.util.ArrayList;
 
 public class MainVerticle extends AbstractVerticle {
     private static final Logger LOGGER = LoggerFactory.getLogger(MainVerticle.class);
-    private final String TEAMID = System.getenv("TEAMID");
-    private final String TEAM_AWS_ACCOUNT_ID = System.getenv("TEAM_AWS_ACCOUNT_ID");
+//    private final String TEAMID = System.getenv("TEAMID");
+//    private final String TEAM_AWS_ACCOUNT_ID = System.getenv("TEAM_AWS_ACCOUNT_ID");
+
+    private final String TEAMID = "Spongebob";
+    private final String TEAM_AWS_ACCOUNT_ID = "859423033203";
     private static WorkerExecutor executor;
 //    private TweetIntimacyMySQLBackend dbReader;
     private TweetIntimacyHBaseBackend dbReader;

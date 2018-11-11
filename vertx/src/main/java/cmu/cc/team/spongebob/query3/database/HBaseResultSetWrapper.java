@@ -27,7 +27,7 @@ public class HBaseResultSetWrapper implements TweetResultSetWrapper {
             long tweetId = Bytes.toLong(r.getValue(family, tweetIdBytes));
             String text = Bytes.toString(r.getValue(family, textBytes));
             String censoredText = Bytes.toString(r.getValue(family, censoredTextBytes));
-            double impactScore = Bytes.toLong(r.getValue(family, impactScoreBytes));
+            double impactScore = Bytes.toDouble(r.getValue(family, impactScoreBytes));
             return new Tweet(text, censoredText, tweetId, impactScore);
         } catch (IOException e) {
             e.printStackTrace();

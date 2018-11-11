@@ -105,6 +105,12 @@ public class MainVerticle extends AbstractVerticle {
         final String userIdStr = context.request().getParam("user_id");
         final String phrase = context.request().getParam("phrase");
         final String nStr = context.request().getParam("n");
+        if (userIdStr == null || userIdStr.isEmpty()
+                || phrase == null || phrase.isEmpty()
+                || nStr == null || nStr.isEmpty()) {
+            context.response().end(header);
+            return;
+        }
         mySQLClient.getConnection(car -> {
             if (car.succeeded()) {
                 SQLConnection connection = car.result();
@@ -178,6 +184,15 @@ public class MainVerticle extends AbstractVerticle {
         final String timeEndStr = context.request().getParam("time_end");
         final String n1Str = context.request().getParam("n1");
         final String n2Str = context.request().getParam("n2");
+        if (uidStartStr == null || uidStartStr.isEmpty()
+                || uidEndStr == null || uidEndStr.isEmpty()
+                || timeStartStr == null || timeStartStr.isEmpty()
+                || timeEndStr == null || timeEndStr.isEmpty()
+                || n1Str == null || n1Str.isEmpty()
+                || n2Str == null || n2Str.isEmpty()) {
+            context.response().end(header);
+            return;
+        }
         mySQLClient.getConnection(car -> {
             if (car.succeeded()) {
                 SQLConnection connection = car.result();
@@ -223,9 +238,12 @@ public class MainVerticle extends AbstractVerticle {
         final String timeEndStr = context.request().getParam("time_end");
         final String n1Str = context.request().getParam("n1");
         final String n2Str = context.request().getParam("n2");
-        if (uidStartStr == null || uidEndStr == null
-                || timeStartStr == null || timeEndStr == null
-                || n1Str == null || n2Str == null) {
+        if (uidStartStr == null || uidStartStr.isEmpty()
+                || uidEndStr == null || uidEndStr.isEmpty()
+                || timeStartStr == null || timeStartStr.isEmpty()
+                || timeEndStr == null || timeEndStr.isEmpty()
+                || n1Str == null || n1Str.isEmpty()
+                || n2Str == null || n2Str.isEmpty()) {
             context.response().end(header);
             return;
         }
@@ -282,8 +300,8 @@ public class MainVerticle extends AbstractVerticle {
      * DNS of Mysql database
      */
 //    private static final String DNS = System.getenv("MYSQL_DNS");
-    private static final String DNS = "18.206.152.231";
-//    private static final String DNS = "localhost";
+//    private static final String DNS = "18.206.152.231";
+    private static final String DNS = "localhost";
     /**
      * Database url
      */

@@ -27,10 +27,11 @@ public class TopicWordHBaseBackend {
      */
 //    private static String zkAddr = System.getenv("HBASE_DNS");
     private static String zkAddr = "localhost";
+//    private static String zkAddr = "18.232.145.71";
     /**
      * The name of your HBase table.
      */
-    private static TableName tableName = TableName.valueOf("contact_tweet");
+    private static TableName tableName = TableName.valueOf("topic_word");
     /**
      * Logger.
      */
@@ -79,7 +80,7 @@ public class TopicWordHBaseBackend {
                     family, createdAt, CompareFilter.CompareOp.GREATER_OR_EQUAL, timeStartComp
             );
             Filter timeEndFilter = new SingleColumnValueFilter(
-                    family, createdAt, CompareFilter.CompareOp.GREATER_OR_EQUAL, timeEndComp
+                    family, createdAt, CompareFilter.CompareOp.LESS_OR_EQUAL, timeEndComp
             );
             FilterList filters = new FilterList();
             filters.addFilter(timeStartFilter);

@@ -1,10 +1,8 @@
 package cmu.cc.team.spongebob.query2.database;
 
-
-import lombok.Getter;
-
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import lombok.Getter;
 
 public class ContactTweet implements Comparable<ContactTweet> {
     private @Getter String text;

@@ -51,10 +51,6 @@ public class TweetIntimacyHBaseBackend {
 
     public TweetIntimacyHBaseBackend() throws IOException {
         LOGGER.setLevel(Level.OFF);
-//        if (!zkAddr.matches("\\d+.\\d+.\\d+.\\d+")) {
-//            System.out.print("Malformed HBase IP address");
-//            System.exit(-1);
-//        }
         conf = HBaseConfiguration.create();
         conf.set("hbase.zookeeper.quorum", zkAddr);
         conf.set("hbase.zookeeper.property.clientport", "2181");

@@ -25,7 +25,8 @@ public class TopicWordHBaseBackend {
     /**
      * The private IP address of HBase master node.
      */
-    private static String zkAddr = System.getenv("HBASE_DNS");
+//    private static String zkAddr = System.getenv("HBASE_DNS");
+    private static String zkAddr = "localhost";
     /**
      * The name of your HBase table.
      */
@@ -36,7 +37,6 @@ public class TopicWordHBaseBackend {
     private static final Logger LOGGER = Logger.getRootLogger();
 
     private static final byte[] family = Bytes.toBytes("tweet");
-    private static final byte[] userId = Bytes.toBytes("user_id");
     private static final byte[] createdAt = Bytes.toBytes("created_at");
 
     /**
@@ -53,7 +53,8 @@ public class TopicWordHBaseBackend {
         conf.set("hbase.zookeeper.property.clientport", "2181");
     }
 
-    public String query(int uidStart, int uidEnd, int timeStart, int timeEnd, int n1, int n2) {
+    public String query(long uidStart, long uidEnd,
+                        long timeStart, long timeEnd, int n1, int n2) {
 
         ByteBuffer bf = ByteBuffer.allocate(16);
         bf.putLong(uidStart);

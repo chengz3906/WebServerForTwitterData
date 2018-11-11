@@ -4,10 +4,12 @@ import cmu.cc.team.spongebob.query1.qrcode.QRCodeParser;
 import cmu.cc.team.spongebob.query2.database.ContactUser;
 import cmu.cc.team.spongebob.query3.database.MySQLResultSetWrapper;
 import cmu.cc.team.spongebob.query3.database.TopicScoreCalculator;
+import cmu.cc.team.spongebob.query3.database.TopicWordHBaseBackend;
 import cmu.cc.team.spongebob.utils.caching.KeyValueLRUCache;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
+import io.vertx.core.WorkerExecutor;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -33,6 +35,7 @@ public class MainVerticle extends AbstractVerticle {
     private final KeyValueLRUCache keyValueCache;
 
     private static final TopicScoreCalculator topicScoreCalculator = new TopicScoreCalculator();
+    private static final TopicWordHBaseBackend dbReader = new TopicWordHBaseBackend();
 
 
     public MainVerticle () {
@@ -213,7 +216,56 @@ public class MainVerticle extends AbstractVerticle {
         });
     }
 
+    private void hbaseTopicWordHandler(RoutingContext context) {
+        final String uidStartStr = context.request().getParam("uid_start");
+        final String uidEndStr = context.request().getParam("uid_end");
+        final String timeStartStr = context.request().getParam("time_start");
+        final String timeEndStr = context.request().getParam("time_end");
+        final String n1Str = context.request().getParam("n1");
+        final String n2Str = context.request().getParam("n2");
+        if (uidStartStr == null || uidEndStr == null
+                || timeStartStr == null || timeEndStr == null
+                || n1Str == null || n2Str == null) {
+            context.response().end(header);
+            return;
+        }
+        final Long uidStart = Long.parseLong(uidStartStr);
+        final Long uidEnd = Long.parseLong(uidEndStr);
+        final Long timeStart = Long.parseLong(timeStartStr);
+        final Long timeEnd = Long.parseLong(timeEndStr);
+        final int n1 = Integer.parseInt(n1Str);
+        final int n2 = Integer.parseInt(n2Str);
 
+        // Query cache
+//        String requestKey = String.format("q2/uid_start=%s&uid_end=%s&"
+//                        + "time_start=%s&time_end=%s&n1=%s&n2=%s",
+//                uidStartStr, uidEndStr, timeStartStr, timeEndStr, n1Str, n2Str);
+//        String resp = cache.get(requestKey);
+//        if (resp != null) {
+//            context.response().end(header + resp);
+//            return;
+//        }
+
+        WorkerExecutor executor;
+        executor = vertx.createSharedWorkerExecutor("query3-worker-pool", 50);
+        executor.<String>executeBlocking(future -> {
+            String queryRes = dbReader.query(uidStart, uidEnd, timeStart, timeEnd, n1, n2);
+            try {
+                context.response().end(header + queryRes);
+            } catch (IllegalStateException e) {
+                System.out.println("Response closed");
+            }
+            future.complete(queryRes);
+        }, false, res-> {
+            // Update cache
+//            if (res.succeeded()) {
+//                cache.put(requestKey, res.result());
+//            } else {
+//                res.cause().printStackTrace();
+//            }
+            executor.close();
+        });
+    }
     // Vert.x MySQL client
     private SQLClient mySQLClient;
 

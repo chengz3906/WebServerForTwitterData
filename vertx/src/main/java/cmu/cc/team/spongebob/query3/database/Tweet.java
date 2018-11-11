@@ -9,7 +9,7 @@ public class Tweet implements Comparable<Tweet> {
     String censoredText;
     long tweetId;
     double impactScore;
-    boolean chosen = false;
+    boolean chosen;
 
     public Tweet(String text, String censoredText, long tweetId,
                  double impactScore) {
@@ -17,6 +17,7 @@ public class Tweet implements Comparable<Tweet> {
         this.censoredText = censoredText;
         this.tweetId = tweetId;
         this.impactScore = impactScore;
+        this.chosen = false;
     }
 
     @Override

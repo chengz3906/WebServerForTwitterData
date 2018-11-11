@@ -18,8 +18,7 @@ public class TopicScoreCalculator {
         ArrayList<Tweet> filteredTweets = new ArrayList<>();
 
         // Extract words from tweets
-        while (rs.hasNext()) {
-            Tweet tweet = rs.next();
+        for (Tweet tweet = rs.next(); tweet != null; tweet = rs.next()) {
             String text = tweet.getText();
             long tweetId = tweet.getTweetId();
             double impactScore = tweet.getImpactScore();
@@ -34,6 +33,7 @@ public class TopicScoreCalculator {
                 words.get(w).addTweet(tweetId, impactScore, ws.size());
             }
         }
+        rs.close();
         int tweetCount = tweets.size();
         ArrayList<Word> wordList = new ArrayList<>(words.values());
         for (Word word : wordList) {
@@ -50,9 +50,9 @@ public class TopicScoreCalculator {
                 tweets.get(id).chosen = true;
             }
         }
-        for (Tweet tweet : tweets.values()) {
-            if (tweet.chosen) {
-                filteredTweets.add(tweet);
+        for (Tweet t : tweets.values()) {
+            if (t.chosen) {
+                filteredTweets.add(t);
             }
         }
         Collections.sort(filteredTweets);
@@ -69,9 +69,9 @@ public class TopicScoreCalculator {
         }
         resultBuilder.append("\n");
         for (int i = 0; i < n2; ++i) {
-            Tweet tweet = filteredTweets.get(i);
+            Tweet t = filteredTweets.get(i);
             resultBuilder.append(String.format("%d\t%d\t%s",
-                    (int)tweet.impactScore, tweet.tweetId, tweet.censoredText));
+                    (int)t.impactScore, t.tweetId, t.censoredText));
             if (i < n2 - 1) {
                 resultBuilder.append("\n");
             }

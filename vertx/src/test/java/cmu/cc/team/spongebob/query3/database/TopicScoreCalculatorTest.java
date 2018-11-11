@@ -28,7 +28,7 @@ public class TopicScoreCalculatorTest {
     void testTopicScore() {
         MyResultSet rs = new MyResultSet();
         String res = TopicScoreCalculator.getTopicScore(rs, 3, 2);
-        assertEquals("me:3.98\tawesome:2.21\tcloud:2.21\n"
+        assertEquals("me:1.46\tawesome:0.81\tcloud:0.81\n"
                 +"53\t2\tplease give me me m-o-r-e cloud'computing\n"
                 +"19\t1\tcloud computing is a*****e 233", res);
     }

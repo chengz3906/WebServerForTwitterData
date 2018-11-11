@@ -47,7 +47,7 @@ public class Word implements Comparable<Word> {
         for (int i = 0; i < relevantTweetCount; ++i) {
             double tf = (double)relevantTweetAppearCount.get(i)
                     / (double)relevantTweetWordCount.get(i);
-            double idf = (double)totalTweetCount / (double)relevantTweetCount;
+            double idf = Math.log((double)totalTweetCount / (double)relevantTweetCount);
             topicScore += tf * idf * Math.log(relevantTweetImpactScore.get(i));
         }
         this.topicScore = topicScore;

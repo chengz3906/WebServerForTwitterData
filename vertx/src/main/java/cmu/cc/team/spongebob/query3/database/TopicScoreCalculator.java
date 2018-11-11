@@ -1,5 +1,6 @@
 package cmu.cc.team.spongebob.query3.database;
 
+import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.hadoop.yarn.webapp.hamlet.Hamlet;
 
 import java.lang.Math;
@@ -13,7 +14,8 @@ public class TopicScoreCalculator {
 
     public static String getTopicScore(TweetResultSetWrapper rs, int n1, int n2) {
         StringBuilder resultBuilder = new StringBuilder();
-        HashMap<String, Word> words = new HashMap<>();
+        // HashMap<String, Word> words = new HashMap<>();
+        HashMap<String, MutablePair<Double, Integer>> tweets = new HashMap<>();
         HashMap<Long, Tweet> tweets = new HashMap<>();
         ArrayList<Tweet> filteredTweets = new ArrayList<>();
 

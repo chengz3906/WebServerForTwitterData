@@ -229,6 +229,7 @@ public class MainVerticle extends AbstractVerticle {
      */
 //    private static final String DNS = System.getenv("MYSQL_DNS");
     private static final String DNS = "18.206.152.231";
+//    private static final String DNS = "localhost";
     /**
      * Database url
      */

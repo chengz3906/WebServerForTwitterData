@@ -13,27 +13,7 @@ resource "aws_instance" "mysql_server" {
     user = "ubuntu"
     private_key = "${file("../../../../team-project.pem")}"
   }
-//
-//  provisioner "file" {
-//    source = "config_mysql.sql"
-//    destination = "config_mysql.sql"
-//  }
 
-//  provisioner "file" {
-//    source = "../../../query1/target/q1.war"
-//    destination = "q1.war"
-//  }
-//
-//  provisioner "file" {
-//    source = "../../../query2/target/q2.war"
-//    destination = "q2.war"
-//  }
-
-//  provisioner "file" {
-//    source = "create_twitter_database.sql"
-//    destination = "create_twitter_database.sql"
-//  }
-//
   provisioner "remote-exec" {
     script = "script.sh"
   }
@@ -45,12 +25,12 @@ resource "aws_instance" "mysql_server" {
   }
 
   volume_tags {
-    Name = "MySQL"
+    Name = "HBase ${count.index}"
     Project = "Phase2"
   }
 
   tags {
-    Name = "MySQL"
+    Name = "HBase ${count.index}"
     Project = "Phase2"
   }
 }

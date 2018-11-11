@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
+# Installing Percona XtraBackup
+wget https://repo.percona.com/apt/percona-release_0.1-6.$(lsb_release -sc)_all.deb
+sudo dpkg -i percona-release_0.1-6.$(lsb_release -sc)_all.deb
 sudo apt update
-sleep 30
+sudo apt install -y percona-xtrabackup-24 # 2.4 with mysql 5.7
 sudo apt install -y mysql-server
-sleep 30
+sudo apt install -y openjdk-8-jdk
 echo "
 # romote access
 [mysqld]
@@ -20,22 +23,17 @@ default-character-set = utf8mb4
 default-character-set = utf8mb4
 " | sudo tee --append /etc/mysql/mysql.conf.d/mysqld.cnf
 
-# Installing Percona XtraBackup
-wget https://repo.percona.com/apt/percona-release_0.1-6.$(lsb_release -sc)_all.deb
-sudo dpkg -i percona-release_0.1-6.$(lsb_release -sc)_all.deb
-sudo apt update
-sudo apt install -y percona-xtrabackup-24 # 2.4 with mysql 5.7
 
 # recover backup
-#wget https://s3.amazonaws.com/cmucc-team-phase2/full_backup_innobackupex_mysql/mysql_backup.tar.gz
-#tar -xvf mysql_backup.tar.gz # about 5 min
-#rm mysql_backup.tar.gz
-#sudo service mysql stop
-#sudo rm -r /var/lib/mysql
-#sudo innobackupex --copy-back ./2018-11-07_02-37-03/ # about 4 min
-#sudo chown -R mysql:mysql /var/lib/mysql
-#sudo service mysql start
-#rm -r ./2018-11-07_02-37-03/
+wget https://s3.amazonaws.com/cmucc-team-phase2/full_backup_innobackupex_mysql/mysql_backup.tar.gz
+tar -xvf mysql_backup.tar.gz # about 5 min
+rm mysql_backup.tar.gz
+sudo service mysql stop
+sudo rm -r /var/lib/mysql
+sudo innobackupex --copy-back ./2018-11-07_02-37-03/ # about 4 min
+sudo chown -R mysql:mysql /var/lib/mysql
+sudo service mysql start
+rm -r ./2018-11-07_02-37-03/
 
 # Full backup
 # sudo innobackupex --user=DBUSER --password=DBUSERPASS /path/to/BACKUP-DIR/

@@ -1,34 +1,19 @@
+# ami id
+variable "ami" {
+  default = "ami-0ac019f4fcb7cb7e6"
+}
+
 # instance type
-
-variable "cluster_release_label" {
-  default = "emr-5.13.0"
+variable "instance_type" {
+  default = "m5.large"
 }
 
-variable "master_node_instance_type" {
-  default = "m4.large"
-}
-
-variable "master_node_instance_count" {
-  default = "1"
-}
-
-variable "master_node_bid_price" {
-  default = "0.1"
-}
-
-variable "core_node_instance_type" {
-  default = "m4.large"
-}
-
-variable "core_node_instance_count" {
-  default = "2"
-}
-
-variable "core_node_bid_price" {
-  default = "0.1"
-}
-
-# Update "key_name" with the key pair name
+# ssh key
 variable "key_name" {
   default = "team-project"
+}
+
+# instance number
+variable "count" {
+  default = 4
 }

@@ -58,29 +58,29 @@ public class MainVerticle extends AbstractVerticle {
     private QRCodeParser qrCodeParser;
 
     private static WorkerExecutor executor;
-//    private TweetIntimacyMySQLBackend tweetIntimacyDBReader;
-    private TweetIntimacyHBaseBackend dbReader;
+    private TweetIntimacyMySQLBackend dbReader;
+//    private TweetIntimacyHBaseBackend dbReader;
 
     private static TopicScoreCalculator topicScoreCalculator;
-    private static TopicWordHBaseBackend topicWordDBReader;
+//    private static TopicWordHBaseBackend topicWordDBReader;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MainVerticle.class);
 
     public MainVerticle () throws IOException {
         qrCodeParser = new QRCodeParser();
-//        dbReader = new TweetIntimacyMySQLBackend();
-        dbReader = new TweetIntimacyHBaseBackend();
-        topicWordDBReader = new TopicWordHBaseBackend();
+        dbReader = new TweetIntimacyMySQLBackend();
+//        dbReader = new TweetIntimacyHBaseBackend();
+//        topicWordDBReader = new TopicWordHBaseBackend();
         topicScoreCalculator = new TopicScoreCalculator();
     }
 
     @Override
     public void start(Future<Void> startFuture) {
-        executor = vertx.createSharedWorkerExecutor("query2-worker-pool", 50);
-        Future<Void> steps = startHttpServer();
-        startFuture.complete();
-//        Future<Void> steps = prepareDatabase().compose(v -> startHttpServer());
-//        steps.setHandler(startFuture.completer());
+//        executor = vertx.createSharedWorkerExecutor("query2-worker-pool", 50);
+//        Future<Void> steps = startHttpServer();
+//        startFuture.complete();
+        Future<Void> steps = prepareDatabase().compose(v -> startHttpServer());
+        steps.setHandler(startFuture.completer());
     }
 
     private Future<Void> prepareDatabase() {
@@ -106,8 +106,8 @@ public class MainVerticle extends AbstractVerticle {
         Router router = Router.router(vertx);
         router.get("/").handler(this::indexHandler);
         router.get("/q1").handler(this::qrcodeHandler);
-        router.get("/q2").handler(this::tweetIntimacyHBaseHandler);
-        router.get("/q3").handler(this::topicWordHBaseHandler);
+        router.get("/q2").handler(this::tweetIntimacyMySQLHandler);
+        router.get("/q3").handler(this::topicWordMySQLHandler);
 
         server
                 .requestHandler(router::accept)
@@ -253,36 +253,36 @@ public class MainVerticle extends AbstractVerticle {
         return info;
     }
 
-    private void tweetIntimacyHBaseHandler(RoutingContext context) {
-        String resp = String.format("%s,%s\n", TEAMID, TEAM_AWS_ACCOUNT_ID);
-        String phrase = context.request().getParam("phrase");
-        String userIdStr = context.request().getParam("user_id");
-        String nStr = context.request().getParam("n");
-        if (phrase == null || phrase.isEmpty()
-                || userIdStr == null || userIdStr.isEmpty()
-                || nStr == null || nStr.isEmpty()) {
-            context.response().end(resp);
-            return;
-        }
-        Long userId = Long.parseLong(userIdStr);
-        int n = Integer.parseInt(nStr);
-
-        // Query cache
-        executor.<String>executeBlocking(future -> {
-            String queryRes = queryHBase(userId, phrase, n);
-            try {
-                context.response().end(resp + queryRes);
-            } catch (IllegalStateException e) {
-                System.out.println("Response closed");
-            }
-            future.complete(queryRes);
-        }, false, res-> {
-            if (res.succeeded()) {
-            } else {
-                res.cause().printStackTrace();
-            }
-        });
-    }
+//    private void tweetIntimacyHBaseHandler(RoutingContext context) {
+//        String resp = String.format("%s,%s\n", TEAMID, TEAM_AWS_ACCOUNT_ID);
+//        String phrase = context.request().getParam("phrase");
+//        String userIdStr = context.request().getParam("user_id");
+//        String nStr = context.request().getParam("n");
+//        if (phrase == null || phrase.isEmpty()
+//                || userIdStr == null || userIdStr.isEmpty()
+//                || nStr == null || nStr.isEmpty()) {
+//            context.response().end(resp);
+//            return;
+//        }
+//        Long userId = Long.parseLong(userIdStr);
+//        int n = Integer.parseInt(nStr);
+//
+//        // Query cache
+//        executor.<String>executeBlocking(future -> {
+//            String queryRes = queryHBase(userId, phrase, n);
+//            try {
+//                context.response().end(resp + queryRes);
+//            } catch (IllegalStateException e) {
+//                System.out.println("Response closed");
+//            }
+//            future.complete(queryRes);
+//        }, false, res-> {
+//            if (res.succeeded()) {
+//            } else {
+//                res.cause().printStackTrace();
+//            }
+//        });
+//    }
 
     private void topicWordMySQLHandler(RoutingContext context) {
         final String uidStartStr = context.request().getParam("uid_start");
@@ -338,42 +338,42 @@ public class MainVerticle extends AbstractVerticle {
         });
     }
 
-    private void topicWordHBaseHandler(RoutingContext context) {
-        final String uidStartStr = context.request().getParam("uid_start");
-        final String uidEndStr = context.request().getParam("uid_end");
-        final String timeStartStr = context.request().getParam("time_start");
-        final String timeEndStr = context.request().getParam("time_end");
-        final String n1Str = context.request().getParam("n1");
-        final String n2Str = context.request().getParam("n2");
-        if (uidStartStr == null || uidStartStr.isEmpty()
-                || uidEndStr == null || uidEndStr.isEmpty()
-                || timeStartStr == null || timeStartStr.isEmpty()
-                || timeEndStr == null || timeEndStr.isEmpty()
-                || n1Str == null || n1Str.isEmpty()
-                || n2Str == null || n2Str.isEmpty()) {
-            context.response().end(header);
-            return;
-        }
-        final Long uidStart = Long.parseLong(uidStartStr);
-        final Long uidEnd = Long.parseLong(uidEndStr);
-        final Long timeStart = Long.parseLong(timeStartStr);
-        final Long timeEnd = Long.parseLong(timeEndStr);
-        final int n1 = Integer.parseInt(n1Str);
-        final int n2 = Integer.parseInt(n2Str);
-
-        WorkerExecutor executor;
-        executor = vertx.createSharedWorkerExecutor("query3-worker-pool", 50);
-        executor.<String>executeBlocking(future -> {
-            String queryRes = topicWordDBReader.query(uidStart, uidEnd, timeStart, timeEnd, n1, n2);
-            try {
-                context.response().end(header + queryRes);
-            } catch (IllegalStateException e) {
-                System.out.println("Response closed");
-            }
-            future.complete(queryRes);
-        }, false, res-> {
-            executor.close();
-        });
-    }
+//    private void topicWordHBaseHandler(RoutingContext context) {
+//        final String uidStartStr = context.request().getParam("uid_start");
+//        final String uidEndStr = context.request().getParam("uid_end");
+//        final String timeStartStr = context.request().getParam("time_start");
+//        final String timeEndStr = context.request().getParam("time_end");
+//        final String n1Str = context.request().getParam("n1");
+//        final String n2Str = context.request().getParam("n2");
+//        if (uidStartStr == null || uidStartStr.isEmpty()
+//                || uidEndStr == null || uidEndStr.isEmpty()
+//                || timeStartStr == null || timeStartStr.isEmpty()
+//                || timeEndStr == null || timeEndStr.isEmpty()
+//                || n1Str == null || n1Str.isEmpty()
+//                || n2Str == null || n2Str.isEmpty()) {
+//            context.response().end(header);
+//            return;
+//        }
+//        final Long uidStart = Long.parseLong(uidStartStr);
+//        final Long uidEnd = Long.parseLong(uidEndStr);
+//        final Long timeStart = Long.parseLong(timeStartStr);
+//        final Long timeEnd = Long.parseLong(timeEndStr);
+//        final int n1 = Integer.parseInt(n1Str);
+//        final int n2 = Integer.parseInt(n2Str);
+//
+//        WorkerExecutor executor;
+//        executor = vertx.createSharedWorkerExecutor("query3-worker-pool", 50);
+//        executor.<String>executeBlocking(future -> {
+//            String queryRes = topicWordDBReader.query(uidStart, uidEnd, timeStart, timeEnd, n1, n2);
+//            try {
+//                context.response().end(header + queryRes);
+//            } catch (IllegalStateException e) {
+//                System.out.println("Response closed");
+//            }
+//            future.complete(queryRes);
+//        }, false, res-> {
+//            executor.close();
+//        });
+//    }
 }
 

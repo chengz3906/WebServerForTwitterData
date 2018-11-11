@@ -16,6 +16,7 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class MainVerticle extends AbstractVerticle {
@@ -23,8 +24,8 @@ public class MainVerticle extends AbstractVerticle {
     private final String TEAMID = System.getenv("TEAMID");
     private final String TEAM_AWS_ACCOUNT_ID = System.getenv("TEAM_AWS_ACCOUNT_ID");
     private static WorkerExecutor executor;
-    private TweetIntimacyMySQLBackend dbReader;
-//    private TweetIntimacyHBaseBackend dbReader;
+//    private TweetIntimacyMySQLBackend dbReader;
+    private TweetIntimacyHBaseBackend dbReader;
 
     private QRCodeParser parser;
     private KeyValueLRUCache cache;
@@ -32,13 +33,13 @@ public class MainVerticle extends AbstractVerticle {
     public MainVerticle () {
         parser = new QRCodeParser();
         cache = KeyValueLRUCache.getInstance();
+        dbReader = null;
     }
 
     @Override
     public void start(Future<Void> startFuture) throws Exception {
         parser = new QRCodeParser();
-        dbReader = new TweetIntimacyMySQLBackend();
-//        dbReader = new TweetIntimacyHBaseBackend();
+//        dbReader = new TweetIntimacyMySQLBackend();
         cache = KeyValueLRUCache.getInstance();
         executor = vertx.createSharedWorkerExecutor("query2-worker-pool", 50);
         Future<Void> steps = startHttpServer();
@@ -106,6 +107,14 @@ public class MainVerticle extends AbstractVerticle {
         return info;
     }
     private void tweetIntimacyHandler(RoutingContext context) {
+
+        if (dbReader == null) {
+            try {
+                dbReader = new TweetIntimacyHBaseBackend();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
         String resp = String.format("%s,%s\n", TEAMID, TEAM_AWS_ACCOUNT_ID);
         String phrase = context.request().getParam("phrase");
         String userIdStr = context.request().getParam("user_id");

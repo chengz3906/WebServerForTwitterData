@@ -23,7 +23,7 @@ public class TweetIntimacyHBaseBackend {
     /**
      * The private IP address of HBase master node.
      */
-    private static String zkAddr = System.getenv("HBASE_DNS");
+    private static String zkAddr = "localhost";
     /**
      * The name of your HBase table.
      */
@@ -46,8 +46,10 @@ public class TweetIntimacyHBaseBackend {
      * Configuration.
      */
     private static Configuration conf;
+    private final Connection conn;
+    private final Table twitterTable;
 
-    public TweetIntimacyHBaseBackend() {
+    public TweetIntimacyHBaseBackend() throws IOException {
         LOGGER.setLevel(Level.OFF);
 //        if (!zkAddr.matches("\\d+.\\d+.\\d+.\\d+")) {
 //            System.out.print("Malformed HBase IP address");
@@ -56,16 +58,18 @@ public class TweetIntimacyHBaseBackend {
         conf = HBaseConfiguration.create();
         conf.set("hbase.zookeeper.quorum", zkAddr);
         conf.set("hbase.zookeeper.property.clientport", "2181");
+
+        conn = ConnectionFactory.createConnection(conf);
+        twitterTable = conn.getTable(tableName);
     }
+
 
     public ArrayList<ContactUser> query(Long userId, String phrase) {
         ArrayList<ContactUser> contacts = new ArrayList<>();
 
         // Get contact information
-        try (Connection conn = ConnectionFactory.createConnection(conf);
-             Table twitterTable = conn.getTable(tableName)) {
-            Scan scan = new Scan();
-            byte[] userIdBytes = Bytes.toBytes(userId);
+        Scan scan = new Scan();
+        byte[] userIdBytes = Bytes.toBytes(userId);
 //            BinaryPrefixComparator comp = new BinaryPrefixComparator(userIdBytes);
 //            Filter filter = new RowFilter(
 //                    CompareFilter.CompareOp.EQUAL, comp) {
@@ -73,7 +77,8 @@ public class TweetIntimacyHBaseBackend {
 
 //            PrefixFilter filter = new PrefixFilter(userIdBytes);
 //            scan.setFilter(filter);
-            scan.setRowPrefixFilter(userIdBytes);
+        scan.setRowPrefixFilter(userIdBytes);
+        try {
             ResultScanner rs = twitterTable.getScanner(scan);
             Long lastUid = null;
             for (Result r = rs.next(); r != null; r = rs.next()) {

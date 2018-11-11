@@ -25,7 +25,6 @@ public class TopicWordHBaseBackend {
     /**
      * The private IP address of HBase master node.
      */
-//    private static String zkAddr = System.getenv("HBASE_DNS");
     private static String zkAddr = "localhost";
 //    private static String zkAddr = "18.232.145.71";
     /**
@@ -47,11 +46,17 @@ public class TopicWordHBaseBackend {
 
     private static final TopicScoreCalculator topicScoreCalculator = new TopicScoreCalculator();
 
-    public TopicWordHBaseBackend() {
+    private static Connection conn;
+
+    private static Table twitterTable;
+
+    public TopicWordHBaseBackend() throws IOException {
         LOGGER.setLevel(Level.OFF);
         conf = HBaseConfiguration.create();
         conf.set("hbase.zookeeper.quorum", zkAddr);
         conf.set("hbase.zookeeper.property.clientport", "2181");
+        conn = ConnectionFactory.createConnection(conf);
+        twitterTable = conn.getTable(tableName);
     }
 
     public String query(long uidStart, long uidEnd,
@@ -69,8 +74,7 @@ public class TopicWordHBaseBackend {
         byte[] timeStartByte = Bytes.toBytes(timeStart);
         byte[] timeEndByte = Bytes.toBytes(timeEnd);
         // Get contact information
-        try (Connection conn = ConnectionFactory.createConnection(conf);
-             Table twitterTable = conn.getTable(tableName)) {
+        try {
             Scan scan = new Scan();
             scan.withStartRow(startByte);
             scan.withStopRow(endByte);

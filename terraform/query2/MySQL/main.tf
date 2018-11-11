@@ -8,16 +8,16 @@ resource "aws_instance" "mysql_server" {
   instance_type = "${var.instance_type}" # variable
   key_name = "${var.key_name}" # variable
 
-  connection {
-    type = "ssh"
-    user = "ubuntu"
-    private_key = "${file("../../../../team-project.pem")}"
-  }
-
-  provisioner "file" {
-    source = "config_mysql.sql"
-    destination = "config_mysql.sql"
-  }
+//  connection {
+//    type = "ssh"
+//    user = "ubuntu"
+//    private_key = "${file("../../../../team-project.pem")}"
+//  }
+//
+//  provisioner "file" {
+//    source = "config_mysql.sql"
+//    destination = "config_mysql.sql"
+//  }
 
 //  provisioner "file" {
 //    source = "../../../query1/target/q1.war"
@@ -29,28 +29,28 @@ resource "aws_instance" "mysql_server" {
 //    destination = "q2.war"
 //  }
 
-  provisioner "file" {
-    source = "create_twitter_database.sql"
-    destination = "create_twitter_database.sql"
-  }
-
-  provisioner "remote-exec" {
-    script = "script.sh"
-  }
+//  provisioner "file" {
+//    source = "create_twitter_database.sql"
+//    destination = "create_twitter_database.sql"
+//  }
+//
+//  provisioner "remote-exec" {
+//    script = "script.sh"
+//  }
 
   root_block_device {
     volume_type = "gp2"
-    volume_size = "50"
+    volume_size = "100"
     delete_on_termination = "true"
   }
 
   volume_tags {
-    Name = "MySQL"
+    Name = "Backup HBase"
     Project = "Phase2"
   }
 
   tags {
-    Name = "MySQL"
+    Name = "Backup HBase"
     Project = "Phase2"
   }
 }

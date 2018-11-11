@@ -61,14 +61,11 @@ public class MainVerticle extends AbstractVerticle {
         String type = context.request().getParam("type");
         String message = context.request().getParam("data");
 
-        String requestKey = String.format("q1/type=%s&data=%s", type, message);
+        // String requestKey = String.format("q1/type=%s&data=%s", type, message);
         // look for it in key value store
-        String resp = cache.get(requestKey);
+        // String resp = cache.get(requestKey);
 
-        if (resp == null) {
-            resp = executeQRCodeRequest(type, message);
-            cache.put(requestKey, resp);
-        }
+        String resp = executeQRCodeRequest(type, message);
         context.response().end(resp);
     }
 

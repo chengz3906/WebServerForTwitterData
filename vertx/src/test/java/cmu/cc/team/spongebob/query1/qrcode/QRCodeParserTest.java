@@ -85,31 +85,5 @@ class QRCodeParserTest {
         // TODO implement speed test
     }
 
-    @Test
-    void testHexStringToBitSquare() {
-        BitSquare decoded = QR_CODE_PARSER.hexStringToBinarySquare(CC_TEAM_QR_CODE, 21);
-        BitSquare expected = QR_CODE_PARSER.messageToBinarySquare("CC Team", false);
-        assertEquals(decoded.toStringPretty(), expected.toStringPretty());
 
-        BitSquare decoded2 = QR_CODE_PARSER.hexStringToBinarySquare(CC_TEAM_IS_AWESOME_QR_CODE, 25);
-        BitSquare expected2 = QR_CODE_PARSER.messageToBinarySquare("CC Team is awesome!", false);
-        assertEquals(decoded2.toStringPretty(), expected2.toStringPretty());
-    }
-
-    @Test
-    void testBitSquareToQRPayload() {
-        BitSquare qrCode = QR_CODE_PARSER.messageToBinarySquare("CC Team", false);
-        qrCode.print();
-
-        byte[] expectedPayload = QR_CODE_PARSER.messageToQRPayload("CC Team");
-        byte[] retrieved = QR_CODE_PARSER.getQRPayload(qrCode);
-
-        assertArrayEquals(retrieved, expectedPayload);
-
-        qrCode = QR_CODE_PARSER.messageToBinarySquare("CC Team is awesome!", false);
-        expectedPayload = QR_CODE_PARSER.messageToQRPayload("CC Team is awesome!");
-        retrieved = QR_CODE_PARSER.getQRPayload(qrCode);
-
-        assertArrayEquals(expectedPayload, retrieved);
-    }
 }

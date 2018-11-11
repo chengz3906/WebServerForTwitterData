@@ -54,8 +54,8 @@ class QRCodeParserTest {
 
     @Test
     void testQRCodeEncode() {
-        assertEquals(QR_CODE_PARSER.encode("CC Team", false), CC_TEAM_QR_CODE);
-        assertEquals(QR_CODE_PARSER.encode("CC Team is awesome!", false), CC_TEAM_IS_AWESOME_QR_CODE);
+        assertEquals(CC_TEAM_QR_CODE, QR_CODE_PARSER.encode("CC Team", false));
+        assertEquals(CC_TEAM_IS_AWESOME_QR_CODE, QR_CODE_PARSER.encode("CC Team is awesome!", false));
     }
 
     @Test
@@ -99,6 +99,7 @@ class QRCodeParserTest {
         System.out.println("QR code decode, total execution time: " + (endTime - startTime) + "ms");
     }
 
+    /*
     @Test
     void testHexStringToBitSquare() {
         BitSquare decoded = QR_CODE_PARSER.hexStringToBinarySquare(CC_TEAM_QR_CODE, 21);
@@ -126,4 +127,5 @@ class QRCodeParserTest {
 
         assertArrayEquals(expectedPayload, retrieved);
     }
+    */
 }

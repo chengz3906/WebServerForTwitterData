@@ -1,25 +1,45 @@
 package cmu.cc.team.spongebob.query3.database;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import org.apache.commons.lang3.tuple.MutablePair;
-import org.apache.hadoop.yarn.webapp.hamlet.Hamlet;
-
 import java.lang.Math;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.ArrayList;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class TopicScoreCalculator {
 
-    private static final String pattern = "(https?|ftp)://[^\\t\\r\\n /$.?#][^\\t\\r\\n ]*";
+    private static final String shortURLRegex = "(https?|ftp)://[^\\t\\r\\n /$.?#][^\\t\\r\\n ]*";
+
+    @Data
+    @AllArgsConstructor
+    private static class TopicWord implements Comparable<TopicWord> {
+        private String word;
+        private double score;
+
+        @Override
+        public int compareTo(TopicWord other) {
+            if (this.score > other.score) {
+                return -1;
+            }
+            if (this.score < other.score) {
+                return 1;
+            }
+            return this.word.compareTo(other.word);
+        }
+    }
 
     public static String getTopicScore(TweetResultSetWrapper rs, int n1, int n2) {
         StringBuilder resultBuilder = new StringBuilder();
         // HashMap<String, Word> words = new HashMap<>();
-        HashMap<String, MutablePair<Double, Integer>> tweets = new HashMap<>();
+        HashMap<String, MutablePair<Double, HashSet<Long>>> wordsHashMap = new HashMap<>();
         HashMap<Long, Tweet> tweets = new HashMap<>();
         ArrayList<Tweet> filteredTweets = new ArrayList<>();
+        HashSet<String> stopWords = new HashSet<>();
 
         // Extract words from tweets
+        int numTweets = 0;
         for (Tweet tweet = rs.next(); tweet != null; tweet = rs.next()) {
             String text = tweet.getText();
             long tweetId = tweet.getTweetId();
@@ -27,14 +47,37 @@ public class TopicScoreCalculator {
             tweets.put(tweetId, tweet);
 
             ArrayList<String> ws = extractWords(text);
+            int numWords = ws.size();
+            // HashSet<String> seenWords = new HashSet<>();
+            double logImpactScore = Math.log(impactScore + 1) / numWords;
             for (String w : ws) {
                 w = w.toLowerCase();
-                if (!words.containsKey(w)) {
-                    words.put(w, new Word(w));
+
+                if (!stopWords.contains(w)) {
+                    if (!wordsHashMap.containsKey(w)) {
+                        HashSet<Long> tweetIds = new HashSet<>();
+                        tweetIds.add(tweetId);
+                        MutablePair<Double, HashSet<Long>> counter = new MutablePair<>(logImpactScore, tweetIds);
+                        wordsHashMap.put(w, counter);
+                    } else {
+                        MutablePair<Double, HashSet<Long>> counter = wordsHashMap.get(w);
+                        counter.setLeft(counter.getLeft() + logImpactScore);
+                        counter.getRight().add(tweetId);
+                    }
                 }
-                words.get(w).addTweet(tweetId, impactScore, ws.size());
             }
+            numTweets++;
         }
+
+        PriorityQueue<TopicWord> topicWords = new PriorityQueue<>();
+        for (Map.Entry<String, MutablePair<Double, HashSet<Long>>> kvPair: wordsHashMap.entrySet()) {
+            double topicScore = Math.log((double) numTweets / kvPair.getValue().right.size()) * kvPair.getValue().left;
+            topicWords.add(new TopicWord(kvPair.getKey(), topicScore));
+        }
+        
+        // TODO pick top n1 topics words
+
+
         rs.close();
         int tweetCount = tweets.size();
         ArrayList<Word> wordList = new ArrayList<>(words.values());
@@ -82,9 +125,10 @@ public class TopicScoreCalculator {
     }
 
     public static ArrayList<String> extractWords(String text) {
-        String noUrl = text.replaceAll(pattern, "");
+        String noUrl = text.replaceAll(shortURLRegex, "");
         ArrayList<String> ws = new ArrayList<>();
 
+        /*
         boolean alphabet = false;
         int start = 0;
         int len = noUrl.length();
@@ -104,5 +148,16 @@ public class TopicScoreCalculator {
             ws.add(noUrl.substring(start, len));
         }
         return ws;
+        */
+
+        Pattern pattern = Pattern.compile("([A-Za-z0-9'-]*[a-zA-Z][A-Za-z0-9'-]*)");
+        String textNoUrl = text.replaceAll(shortURLRegex, "");
+        Matcher matcher = pattern.matcher(textNoUrl);
+        while(matcher.find()) {
+            String word = matcher.group(1);
+            ws.add(word);
+        }
+        return ws;
     }
+
 }

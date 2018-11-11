@@ -4,7 +4,6 @@ import cmu.cc.team.spongebob.query1.qrcode.QRCodeParser;
 import cmu.cc.team.spongebob.query2.database.ContactUser;
 import cmu.cc.team.spongebob.query3.database.MySQLResultSetWrapper;
 import cmu.cc.team.spongebob.query3.database.TopicScoreCalculator;
-import cmu.cc.team.spongebob.utils.caching.KeyValueLRUCache;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
@@ -30,12 +29,10 @@ public class MainVerticle extends AbstractVerticle {
     private static final Logger LOGGER = LoggerFactory.getLogger(MainVerticle.class);
 
     private final QRCodeParser qrCodeParser;
-    private final KeyValueLRUCache keyValueCache;
 
 
     public MainVerticle () {
         qrCodeParser = new QRCodeParser();
-        keyValueCache = KeyValueLRUCache.getInstance();
         // TODO experiment with different pool size
     }
 
@@ -77,23 +74,18 @@ public class MainVerticle extends AbstractVerticle {
         String type = context.request().getParam("type");
         String message = context.request().getParam("data");
 
-        String requestKey = String.format("q1/type=%s&data=%s", type, message);
-        // look for it in key value store
-        String resp = keyValueCache.get(requestKey);
-
-        if (resp == null) {
-            if (type.equals("encode")) {
-                resp = qrCodeParser.encode(message, true);
-            } else if (type.equals("decode")) {
-                try {
-                    resp = qrCodeParser.decode(message);
-                } catch (QRCodeParser.QRParsingException e) {
-                    resp = "decoding error";
-                }
+        String result = "";
+        if (type.equals("encode")) {
+            result = qrCodeParser.encode(message, true);
+        } else if (type.equals("decode")) {
+            try {
+                result = qrCodeParser.decode(message);
+            } catch (QRCodeParser.QRParsingException e) {
+                result = "decoding error";
             }
-            keyValueCache.put(requestKey, resp);
         }
-        context.response().end(resp);
+
+        context.response().end(result);
     }
 
     private void tweetIntimacyHandler(RoutingContext context) {
@@ -266,5 +258,4 @@ public class MainVerticle extends AbstractVerticle {
 
         return future;
     }
-
 }

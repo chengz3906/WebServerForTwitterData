@@ -133,8 +133,8 @@ public class MainVerticle extends AbstractVerticle {
 
         String result = "";
 
-        if (type != null && message != null && message.length() <= 22) {
-            if (type.equals("encode")) {
+        if (type != null && message != null) {
+            if (type.equals("encode") && message.length() <= 22) {
                 result = qrCodeParser.encode(message, true);
             } else if (type.equals("decode")) {
                 try {

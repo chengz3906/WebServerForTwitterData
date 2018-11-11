@@ -111,6 +111,7 @@ public class LoadHBase {
         final long endTime = System.currentTimeMillis();
         System.out.println(String.format("Load a json in %d s", (endTime - startTime) / 1000));
     }
+
     private static Put putOneJSON(JsonObject rowJSON, Table table) throws IOException {
         // row key
         long user1ID = rowJSON.get("user1_id").getAsLong();

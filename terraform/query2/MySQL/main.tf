@@ -40,17 +40,17 @@ resource "aws_instance" "mysql_server" {
 
   root_block_device {
     volume_type = "gp2"
-    volume_size = "100"
+    volume_size = "200"
     delete_on_termination = "true"
   }
 
   volume_tags {
-    Name = "Backup HBase"
+    Name = "Backup HBase 200G"
     Project = "Phase2"
   }
 
   tags {
-    Name = "Backup HBase"
+    Name = "Backup HBase 200G"
     Project = "Phase2"
   }
 }

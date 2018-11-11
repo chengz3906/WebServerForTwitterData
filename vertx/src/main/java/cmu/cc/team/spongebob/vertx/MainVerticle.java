@@ -179,7 +179,7 @@ public class MainVerticle extends AbstractVerticle {
 
                 final String sql = "SELECT tweet_id, text, censored_text, impact_score "
                         + "FROM topic_word "
-                        + "WHERE (tweet_id BETWEEN ? AND ?) "
+                        + "WHERE (user_id BETWEEN ? AND ?) "
                         + "AND (created_at BETWEEN ? AND ?) ";
                 final Long uidStart = Long.parseLong(uidStartStr);
                 final Long uidEnd = Long.parseLong(uidEndStr);
@@ -228,7 +228,7 @@ public class MainVerticle extends AbstractVerticle {
      * DNS of Mysql database
      */
 //    private static final String DNS = System.getenv("MYSQL_DNS");
-    private static final String DNS = "localhost";
+    private static final String DNS = "18.206.152.231";
     /**
      * Database url
      */

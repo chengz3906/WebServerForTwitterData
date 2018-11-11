@@ -28,6 +28,7 @@ public class MySQLResultSetWrapper implements TweetResultSetWrapper {
         String text = row.getString("text");
         String censoredText = row.getString("censored_text");
         double impactScore = row.getLong("impact_score");
+        index++;
         return new Tweet(text, censoredText, tweetId, impactScore);
     }
 

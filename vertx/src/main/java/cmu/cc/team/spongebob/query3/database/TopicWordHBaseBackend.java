@@ -25,12 +25,11 @@ public class TopicWordHBaseBackend {
     /**
      * The private IP address of HBase master node.
      */
-//    private static String zkAddr = System.getenv("HBASE_DNS");
     private static String zkAddr = "localhost";
     /**
      * The name of your HBase table.
      */
-    private static TableName tableName = TableName.valueOf("contact_tweet");
+    private static TableName tableName = TableName.valueOf("topic_word");
     /**
      * Logger.
      */
@@ -46,11 +45,17 @@ public class TopicWordHBaseBackend {
 
     private static final TopicScoreCalculator topicScoreCalculator = new TopicScoreCalculator();
 
-    public TopicWordHBaseBackend() {
+    private static Connection conn;
+
+    private static Table twitterTable;
+
+    public TopicWordHBaseBackend() throws IOException {
         LOGGER.setLevel(Level.OFF);
         conf = HBaseConfiguration.create();
         conf.set("hbase.zookeeper.quorum", zkAddr);
         conf.set("hbase.zookeeper.property.clientport", "2181");
+        conn = ConnectionFactory.createConnection(conf);
+        twitterTable = conn.getTable(tableName);
     }
 
     public String query(long uidStart, long uidEnd,
@@ -68,8 +73,7 @@ public class TopicWordHBaseBackend {
         byte[] timeStartByte = Bytes.toBytes(timeStart);
         byte[] timeEndByte = Bytes.toBytes(timeEnd);
         // Get contact information
-        try (Connection conn = ConnectionFactory.createConnection(conf);
-             Table twitterTable = conn.getTable(tableName)) {
+        try {
             Scan scan = new Scan();
             scan.withStartRow(startByte);
             scan.withStopRow(endByte);
@@ -79,7 +83,7 @@ public class TopicWordHBaseBackend {
                     family, createdAt, CompareFilter.CompareOp.GREATER_OR_EQUAL, timeStartComp
             );
             Filter timeEndFilter = new SingleColumnValueFilter(
-                    family, createdAt, CompareFilter.CompareOp.GREATER_OR_EQUAL, timeEndComp
+                    family, createdAt, CompareFilter.CompareOp.LESS_OR_EQUAL, timeEndComp
             );
             FilterList filters = new FilterList();
             filters.addFilter(timeStartFilter);

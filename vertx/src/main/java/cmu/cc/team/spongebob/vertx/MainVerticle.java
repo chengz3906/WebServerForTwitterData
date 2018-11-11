@@ -32,43 +32,72 @@ import org.slf4j.LoggerFactory;
 
 
 public class MainVerticle extends AbstractVerticle {
-    private static final Logger LOGGER = LoggerFactory.getLogger(MainVerticle.class);
-//    private final String TEAMID = System.getenv("TEAMID");
-//    private final String TEAM_AWS_ACCOUNT_ID = System.getenv("TEAM_AWS_ACCOUNT_ID");
+    /**
+     * Response header
+     */
     private final String TEAMID = "Spongebob";
     private final String TEAM_AWS_ACCOUNT_ID = "859423033203";
-//    private static WorkerExecutor executor;
-    private TweetIntimacyMySQLBackend tweetIntimacyDBReader;
-//    private TweetIntimacyHBaseBackend dbReader;
+    private final String header = String.format("%s,%s\n", TEAMID, TEAM_AWS_ACCOUNT_ID);
+    /**
+     * MySQL Database name.
+     */
+    private static final String DB_NAME = "twitter";
+    /**
+     * DNS of Mysql database
+     */
+    private static final String DNS = "localhost";
+    /**
+     * MySQL Username and password.
+     */
+    private static final String DB_USER = "spongebob";
+    private static final String DB_PWD = "15619";
 
+    private final int MAX_POOL_SIZE = 500;
+    // Vert.x MySQL client
+    private SQLClient mySQLClient;
 
-    private final QRCodeParser qrCodeParser;
-//    private final KeyValueLRUCache keyValueCache;
+    private QRCodeParser qrCodeParser;
 
-    private static final TopicScoreCalculator topicScoreCalculator = new TopicScoreCalculator();
-    private static final TopicWordHBaseBackend topicWorldDBReader = new TopicWordHBaseBackend();
+    private static WorkerExecutor executor;
+//    private TweetIntimacyMySQLBackend tweetIntimacyDBReader;
+    private TweetIntimacyHBaseBackend dbReader;
 
+    private static TopicScoreCalculator topicScoreCalculator;
+    private static TopicWordHBaseBackend topicWordDBReader;
 
-    public MainVerticle () {
+    private static final Logger LOGGER = LoggerFactory.getLogger(MainVerticle.class);
+
+    public MainVerticle () throws IOException {
         qrCodeParser = new QRCodeParser();
-//        keyValueCache = KeyValueLRUCache.getInstance();
-        // TODO experiment with different pool size
+//        dbReader = new TweetIntimacyMySQLBackend();
+        dbReader = new TweetIntimacyHBaseBackend();
+        topicWordDBReader = new TopicWordHBaseBackend();
+        topicScoreCalculator = new TopicScoreCalculator();
     }
 
     @Override
-    public void start(Future<Void> startFuture) throws Exception {
-<<<<<<< HEAD
-        parser = new QRCodeParser();
-//        dbReader = new TweetIntimacyMySQLBackend();
-        dbReader = new TweetIntimacyHBaseBackend();
-//        cache = KeyValueLRUCache.getInstance();
+    public void start(Future<Void> startFuture) {
         executor = vertx.createSharedWorkerExecutor("query2-worker-pool", 50);
         Future<Void> steps = startHttpServer();
         startFuture.complete();
-=======
-        Future<Void> steps = prepareDatabase().compose(v -> startHttpServer());
-        steps.setHandler(startFuture.completer());
->>>>>>> 98ea51731bad253de8241ef0f4911435399345e7
+//        Future<Void> steps = prepareDatabase().compose(v -> startHttpServer());
+//        steps.setHandler(startFuture.completer());
+    }
+
+    private Future<Void> prepareDatabase() {
+        Future<Void> future = Future.future();
+        JsonObject mySQLClientConfig = new JsonObject()
+                .put("host", DNS)
+                .put("username", DB_USER)
+                .put("password", DB_PWD)
+                .put("database", DB_NAME)
+                .put("maxPoolSize", MAX_POOL_SIZE);
+
+        mySQLClient = MySQLClient.createNonShared(vertx, mySQLClientConfig);
+
+        future.complete();
+
+        return future;
     }
 
     private Future<Void> startHttpServer() {
@@ -78,8 +107,8 @@ public class MainVerticle extends AbstractVerticle {
         Router router = Router.router(vertx);
         router.get("/").handler(this::indexHandler);
         router.get("/q1").handler(this::qrcodeHandler);
-        router.get("/q2").handler(this::tweetIntimacyHandler);
-        router.get("/q3").handler(this::topicWordHandler);
+        router.get("/q2").handler(this::tweetIntimacyHBaseHandler);
+        router.get("/q3").handler(this::topicWordHBaseHandler);
 
         server
                 .requestHandler(router::accept)
@@ -99,40 +128,31 @@ public class MainVerticle extends AbstractVerticle {
         context.response().end("Heartbeat: Hello from Vert.x!");
     }
 
+    private String executeQRCodeRequest(String type, String message) {
+        String result = "";
+        if (type.equals("encode")) {
+            result = qrCodeParser.encode(message, true);
+        } else if (type.equals("decode")) {
+            try {
+                result = qrCodeParser.decode(message);
+            } catch (QRCodeParser.QRParsingException e) {
+                result = "decoding error";
+            }
+        }
+        return result;
+    }
+
     private void qrcodeHandler(RoutingContext context) {
         String type = context.request().getParam("type");
         String message = context.request().getParam("data");
 
         String requestKey = String.format("q1/type=%s&data=%s", type, message);
-        // look for it in key value store
-<<<<<<< HEAD
-//        String resp = cache.get(requestKey);
-        String resp;
+        String resp = executeQRCodeRequest(type, message);
 
-//        if (resp == null) {
-            resp = executeQRCodeRequest(type, message);
-//            cache.put(requestKey, resp);
-//        }
-=======
-        String resp = keyValueCache.get(requestKey);
-
-        if (resp == null) {
-            if (type.equals("encode")) {
-                resp = qrCodeParser.encode(message, true);
-            } else if (type.equals("decode")) {
-                try {
-                    resp = qrCodeParser.decode(message);
-                } catch (QRCodeParser.QRParsingException e) {
-                    resp = "decoding error";
-                }
-            }
-            keyValueCache.put(requestKey, resp);
-        }
->>>>>>> 98ea51731bad253de8241ef0f4911435399345e7
         context.response().end(resp);
     }
 
-    private void tweetIntimacyHandler(RoutingContext context) {
+    private void tweetIntimacyMySQLHandler(RoutingContext context) {
         final String userIdStr = context.request().getParam("user_id");
         final String phrase = context.request().getParam("phrase");
         final String nStr = context.request().getParam("n");
@@ -189,7 +209,6 @@ public class MainVerticle extends AbstractVerticle {
                         }
 //
                         context.response().end(header + resp);
-////                        mySQLCache.put(requestKey, resp);
                     } else {
                         LOGGER.error("Could not get query", res.cause());
                         context.fail(res.cause());
@@ -201,16 +220,27 @@ public class MainVerticle extends AbstractVerticle {
             }
         });
     }
-<<<<<<< HEAD
-    private void tweetIntimacyHandler(RoutingContext context) {
 
-//        if (dbReader == null) {
-//            try {
-//                dbReader = new TweetIntimacyHBaseBackend();
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//        }
+    private String queryHBase(Long userId, String phrase, int n) {
+        ArrayList<ContactUser> contactUsers = dbReader.query(userId, phrase);
+        n = n > contactUsers.size() ? contactUsers.size() : n;
+        String info = "";
+        for (int i = 0; i < n; ++i) {
+            ContactUser contactUser = contactUsers.get(i);
+            info += String.format("%s\t%s\t%s",
+                    contactUser.getUserName(),
+                    contactUser.getUserDescription(),
+                    contactUser.getTweetText());
+
+            // output new line if it is not the last line
+            if (i < n - 1) {
+                info += "\n";
+            }
+        }
+        return info;
+    }
+
+    private void tweetIntimacyHBaseHandler(RoutingContext context) {
         String resp = String.format("%s,%s\n", TEAMID, TEAM_AWS_ACCOUNT_ID);
         String phrase = context.request().getParam("phrase");
         String userIdStr = context.request().getParam("user_id");
@@ -219,9 +249,29 @@ public class MainVerticle extends AbstractVerticle {
                 || userIdStr == null || userIdStr.isEmpty()
                 || nStr == null || nStr.isEmpty()) {
             context.response().end(resp);
-=======
+            return;
+        }
+        Long userId = Long.parseLong(userIdStr);
+        int n = Integer.parseInt(nStr);
 
-    private void topicWordHandler(RoutingContext context) {
+        // Query cache
+        executor.<String>executeBlocking(future -> {
+            String queryRes = queryHBase(userId, phrase, n);
+            try {
+                context.response().end(resp + queryRes);
+            } catch (IllegalStateException e) {
+                System.out.println("Response closed");
+            }
+            future.complete(queryRes);
+        }, false, res-> {
+            if (res.succeeded()) {
+            } else {
+                res.cause().printStackTrace();
+            }
+        });
+    }
+
+    private void topicWordMySQLHandler(RoutingContext context) {
         final String uidStartStr = context.request().getParam("uid_start");
         final String uidEndStr = context.request().getParam("uid_end");
         final String timeStartStr = context.request().getParam("time_start");
@@ -266,7 +316,7 @@ public class MainVerticle extends AbstractVerticle {
         });
     }
 
-    private void hbaseTopicWordHandler(RoutingContext context) {
+    private void topicWordHBaseHandler(RoutingContext context) {
         final String uidStartStr = context.request().getParam("uid_start");
         final String uidEndStr = context.request().getParam("uid_end");
         final String timeStartStr = context.request().getParam("time_start");
@@ -277,7 +327,6 @@ public class MainVerticle extends AbstractVerticle {
                 || timeStartStr == null || timeEndStr == null
                 || n1Str == null || n2Str == null) {
             context.response().end(header);
->>>>>>> 98ea51731bad253de8241ef0f4911435399345e7
             return;
         }
         final Long uidStart = Long.parseLong(uidStartStr);
@@ -287,28 +336,10 @@ public class MainVerticle extends AbstractVerticle {
         final int n1 = Integer.parseInt(n1Str);
         final int n2 = Integer.parseInt(n2Str);
 
-        // Query cache
-<<<<<<< HEAD
-        String requestKey = String.format("q2/user_id=%s&phrase=%s&n=%s",
-                userIdStr, phrase, nStr);
-//        String info = cache.get(requestKey);
-//        if (info != null) {
-//            context.response().end(resp + info);
-=======
-//        String requestKey = String.format("q2/uid_start=%s&uid_end=%s&"
-//                        + "time_start=%s&time_end=%s&n1=%s&n2=%s",
-//                uidStartStr, uidEndStr, timeStartStr, timeEndStr, n1Str, n2Str);
-//        String resp = cache.get(requestKey);
-//        if (resp != null) {
-//            context.response().end(header + resp);
->>>>>>> 98ea51731bad253de8241ef0f4911435399345e7
-//            return;
-//        }
-
         WorkerExecutor executor;
         executor = vertx.createSharedWorkerExecutor("query3-worker-pool", 50);
         executor.<String>executeBlocking(future -> {
-            String queryRes = dbReader.query(uidStart, uidEnd, timeStart, timeEnd, n1, n2);
+            String queryRes = topicWordDBReader.query(uidStart, uidEnd, timeStart, timeEnd, n1, n2);
             try {
                 context.response().end(header + queryRes);
             } catch (IllegalStateException e) {
@@ -316,128 +347,10 @@ public class MainVerticle extends AbstractVerticle {
             }
             future.complete(queryRes);
         }, false, res-> {
-<<<<<<< HEAD
-            if (res.succeeded()) {
-//                cache.put(requestKey, res.result());
-            } else {
-                res.cause().printStackTrace();
-            }
-=======
-            // Update cache
-//            if (res.succeeded()) {
-//                cache.put(requestKey, res.result());
-//            } else {
-//                res.cause().printStackTrace();
-//            }
             executor.close();
->>>>>>> 98ea51731bad253de8241ef0f4911435399345e7
         });
     }
-    // Vert.x MySQL client
-    private SQLClient mySQLClient;
 
-<<<<<<< HEAD
-    private void mysqlHandler(RoutingContext context) {
-        Thread thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                String resp = String.format("%s,%s\n", TEAMID, TEAM_AWS_ACCOUNT_ID);
-                String phrase = context.request().getParam("phrase");
-                String userIdStr = context.request().getParam("user_id");
-                String nStr = context.request().getParam("n");
-                if (phrase.isEmpty() || userIdStr.isEmpty()
-                        || nStr.isEmpty()) {
-                    context.response().end(resp);
-                    return;
-                }
-                Long userId = Long.parseLong(userIdStr);
-                int n = Integer.parseInt(nStr);
 
-                // Query cache
-                String requestKey = String.format("q2/user_id=%s&phrase=%s&n=%s",
-                        userIdStr, phrase, nStr);
-                String info;
-//                String info = cache.get(requestKey);
-//                if (info != null) {
-//                    context.response().end(resp + info);
-//                    return;
-//                }
-
-                // Query database
-                ArrayList<ContactUser> contactUsers = dbReader.query(userId, phrase);
-                n = n > contactUsers.size() ? contactUsers.size() : n;
-                info = "";
-                for (int i = 0; i < n; ++i) {
-                    ContactUser contactUser = contactUsers.get(i);
-                    info += String.format("%s\t%s\t%s",
-                            contactUser.getUserName(),
-                            contactUser.getUserDescription(),
-                            contactUser.getTweetText());
-
-                    // output new line if it is not the last line
-                    if (i < n - 1) {
-                        info += "\n";
-                    }
-                }
-                resp += info;
-                context.response().end(resp);
-//                cache.put(requestKey, info);
-            }
-        });
-        thread.start();
-    }
-=======
-    /**
-     * JDBC driver of MySQL Connector/J.
-     */
-    private static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";
-    /**
-     * Database name.
-     */
-//    private static final String DB_NAME = System.getenv("MYSQL_DB_NAME");
-    private static final String DB_NAME = "twitter";
-    /**
-     * DNS of Mysql database
-     */
-//    private static final String DNS = System.getenv("MYSQL_DNS");
-    private static final String DNS = "18.206.152.231";
-//    private static final String DNS = "localhost";
-    /**
-     * Database url
-     */
-    private static final String URL = String.format(
-            "jdbc:mysql://%s/%s?useSSL=false", DNS, DB_NAME);
-    /**
-     * Username and password.
-     */
-//    private static final String DB_USER = System.getenv("MYSQL_USER");
-//    private static final String DB_PWD = System.getenv("MYSQL_PWD");
-    private static final String DB_USER = "spongebob";
-    private static final String DB_PWD = "15619";
-
-    //    private final String TEAMID = System.getenv("TEAMID");
-//    private final String TEAM_AWS_ACCOUNT_ID = System.getenv("TEAM_AWS_ACCOUNT_ID");
-    private final String TEAMID = "Spongebob";
-    private final String TEAM_AWS_ACCOUNT_ID = "859423033203";
-    private final String header = String.format("%s,%s\n", TEAMID, TEAM_AWS_ACCOUNT_ID);
->>>>>>> 98ea51731bad253de8241ef0f4911435399345e7
-
-    private final int MAX_POOL_SIZE = 500;
-
-    private Future<Void> prepareDatabase() {
-        Future<Void> future = Future.future();
-        JsonObject mySQLClientConfig = new JsonObject()
-                .put("host", DNS)
-                .put("username", DB_USER)
-                .put("password", DB_PWD)
-                .put("database", DB_NAME)
-                .put("maxPoolSize", MAX_POOL_SIZE);
-
-        mySQLClient = MySQLClient.createNonShared(vertx, mySQLClientConfig);
-
-        future.complete();
-
-        return future;
-    }
 
 }

@@ -8,11 +8,11 @@ resource "aws_instance" "mysql_server" {
   instance_type = "${var.instance_type}" # variable
   key_name = "${var.key_name}" # variable
 
-//  connection {
-//    type = "ssh"
-//    user = "ubuntu"
-//    private_key = "${file("../../../../team-project.pem")}"
-//  }
+  connection {
+    type = "ssh"
+    user = "ubuntu"
+    private_key = "${file("../../../../team-project.pem")}"
+  }
 //
 //  provisioner "file" {
 //    source = "config_mysql.sql"
@@ -34,23 +34,23 @@ resource "aws_instance" "mysql_server" {
 //    destination = "create_twitter_database.sql"
 //  }
 //
-//  provisioner "remote-exec" {
-//    script = "script.sh"
-//  }
+  provisioner "remote-exec" {
+    script = "script.sh"
+  }
 
   root_block_device {
     volume_type = "gp2"
-    volume_size = "200"
+    volume_size = "100"
     delete_on_termination = "true"
   }
 
   volume_tags {
-    Name = "Backup HBase 200G"
+    Name = "MySQL"
     Project = "Phase2"
   }
 
   tags {
-    Name = "Backup HBase 200G"
+    Name = "MySQL"
     Project = "Phase2"
   }
 }

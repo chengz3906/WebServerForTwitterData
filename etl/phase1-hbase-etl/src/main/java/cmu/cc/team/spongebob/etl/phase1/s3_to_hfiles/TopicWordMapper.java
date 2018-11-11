@@ -126,7 +126,7 @@ public class TopicWordMapper {
         Put put = new Put(rowKeyBytes);
 
         // impact score
-        double impactScore = rowJSON.get("impact_score").getAsLong();
+        long impactScore = rowJSON.get("impact_score").getAsLong();
         put.addColumn(COLF_TWEET, COL_IMPACT_SCORE, Bytes.toBytes(impactScore));
 
         // text

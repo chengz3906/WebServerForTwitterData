@@ -127,32 +127,21 @@ public class MainVerticle extends AbstractVerticle {
         context.response().end("Heartbeat: Hello from Vert.x!");
     }
 
-    private String executeQRCodeRequest(String type, String message) {
-        String result = "";
-        if (type.equals("encode")) {
-            result = qrCodeParser.encode(message, true);
-        } else if (type.equals("decode")) {
-            try {
-                result = qrCodeParser.decode(message);
-            } catch (QRCodeParser.QRParsingException e) {
-                result = "decoding error";
-            }
-        }
-        return result;
-    }
-
     private void qrcodeHandler(RoutingContext context) {
         String type = context.request().getParam("type");
         String message = context.request().getParam("data");
 
         String result = "";
-        if (type.equals("encode")) {
-            result = qrCodeParser.encode(message, true);
-        } else if (type.equals("decode")) {
-            try {
-                result = qrCodeParser.decode(message);
-            } catch (QRCodeParser.QRParsingException e) {
-                result = "decoding error";
+
+        if (type != null && message != null && message.length() <= 22) {
+            if (type.equals("encode")) {
+                result = qrCodeParser.encode(message, true);
+            } else if (type.equals("decode")) {
+                try {
+                    result = qrCodeParser.decode(message);
+                } catch (QRCodeParser.QRParsingException e) {
+                    result = "decoding error";
+                }
             }
         }
 

@@ -30,7 +30,7 @@ public class TopicWordMapper {
     private static final byte[] COL_TWEET_CENSORED_TEXT = "censored_text".getBytes();
     private static final byte[] COL_IMPACT_SCORE = "impact_score".getBytes();
     private static final byte[] COL_TWEET_CREATED_AT = "created_at".getBytes();
-    private static String S3_FOLDER_NAME = "topic_word_json";
+    private static String S3_FOLDER_NAME = "topic_word_json/";
     private static String S3_BUCKET_NAME = "cmucc-team-phase2";
 
     public static void main(String[] args) throws IOException {
@@ -126,7 +126,7 @@ public class TopicWordMapper {
         Put put = new Put(rowKeyBytes);
 
         // impact score
-        double impactScore = rowJSON.get("impact_score").getAsDouble();
+        double impactScore = rowJSON.get("impact_score").getAsLong();
         put.addColumn(COLF_TWEET, COL_IMPACT_SCORE, Bytes.toBytes(impactScore));
 
         // text

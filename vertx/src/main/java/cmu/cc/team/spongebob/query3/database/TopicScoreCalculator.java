@@ -3,6 +3,9 @@ package cmu.cc.team.spongebob.query3.database;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.commons.lang3.tuple.MutablePair;
+import org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
+
+import java.io.*;
 import java.lang.Math;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -10,11 +13,14 @@ import java.util.regex.Pattern;
 
 public class TopicScoreCalculator {
 
+    private static final Pattern pattern = Pattern.compile("([A-Za-z0-9'-]*[a-zA-Z][A-Za-z0-9'-]*)");
     private static final String shortURLRegex = "(https?|ftp)://[^\\t\\r\\n /$.?#][^\\t\\r\\n ]*";
+    private static HashSet<String> stopWords;
+    private static HashMap<String, String> censorDict;
 
     @Data
     @AllArgsConstructor
-    private static class TopicWord implements Comparable<TopicWord> {
+    private class TopicWord implements Comparable<TopicWord> {
         private String word;
         private double score;
 
@@ -30,13 +36,42 @@ public class TopicScoreCalculator {
         }
     }
 
-    public static String getTopicScore(TweetResultSetWrapper rs, int n1, int n2) {
+    public TopicScoreCalculator() {
+        stopWords = new HashSet<>();
+        censorDict = new HashMap<>();
+        loadStopWords();
+        loadCensorDict();
+    }
+
+    private void loadStopWords() {
+        ClassLoader classLoader = getClass().getClassLoader();
+        InputStream in = classLoader.getResourceAsStream("stopwords.txt");
+
+        try (Scanner scanner = new Scanner(in)) {
+            while (scanner.hasNextLine()) {
+                String stopWord = scanner.nextLine().toLowerCase();
+                stopWords.add(stopWord);
+            }
+        }
+    }
+
+    private void loadCensorDict() {
+        ClassLoader classLoader = getClass().getClassLoader();
+        InputStream in = classLoader.getResourceAsStream("censored_dict.txt");
+
+        try (Scanner scanner = new Scanner(in)) {
+            while (scanner.hasNextLine()) {
+                String[] censorPair = scanner.nextLine().toLowerCase().split(",");
+                censorDict.put(censorPair[0], censorPair[1]);
+            }
+        }
+    }
+
+    public String getTopicScore(TweetResultSetWrapper rs, int n1, int n2) {
         StringBuilder resultBuilder = new StringBuilder();
-        // HashMap<String, Word> words = new HashMap<>();
         HashMap<String, MutablePair<Double, HashSet<Long>>> wordsHashMap = new HashMap<>();
         HashMap<Long, Tweet> tweets = new HashMap<>();
         ArrayList<Tweet> filteredTweets = new ArrayList<>();
-        HashSet<String> stopWords = new HashSet<>();
 
         // Extract words from tweets
         int numTweets = 0;
@@ -48,7 +83,6 @@ public class TopicScoreCalculator {
 
             ArrayList<String> ws = extractWords(text);
             int numWords = ws.size();
-            // HashSet<String> seenWords = new HashSet<>();
             double logImpactScore = Math.log(impactScore + 1) / numWords;
             for (String w : ws) {
                 w = w.toLowerCase();
@@ -69,28 +103,17 @@ public class TopicScoreCalculator {
             numTweets++;
         }
 
-        PriorityQueue<TopicWord> topicWords = new PriorityQueue<>();
+        ArrayList<TopicWord> topicWords = new ArrayList<>();
         for (Map.Entry<String, MutablePair<Double, HashSet<Long>>> kvPair: wordsHashMap.entrySet()) {
             double topicScore = Math.log((double) numTweets / kvPair.getValue().right.size()) * kvPair.getValue().left;
             topicWords.add(new TopicWord(kvPair.getKey(), topicScore));
         }
-        
-        // TODO pick top n1 topics words
-
-
-        rs.close();
-        int tweetCount = tweets.size();
-        ArrayList<Word> wordList = new ArrayList<>(words.values());
-        for (Word word : wordList) {
-            word.setTotalTweetCount(tweetCount);
-            word.calculateTopicScore();
-        }
-        Collections.sort(wordList);
+        Collections.sort(topicWords);
 
         // Get n1 words and n2 tweets
-        n1 = Math.min(wordList.size(), n1);
+        n1 = Math.min(topicWords.size(), n1);
         for (int i = 0; i < n1; ++i) {
-            ArrayList<Long> tweetIds = wordList.get(i).getRelevantTweetId();
+            HashSet<Long> tweetIds = wordsHashMap.get(topicWords.get(i).word).getRight();
             for (Long id : tweetIds) {
                 tweets.get(id).chosen = true;
             }
@@ -105,9 +128,13 @@ public class TopicScoreCalculator {
 
         // Form response string
         for (int i = 0; i < n1; ++i) {
-            Word word = wordList.get(i);
+            TopicWord word = topicWords.get(i);
+            String censoredWord = word.word;
+            if (censorDict.containsKey(censoredWord)) {
+                censoredWord = censorDict.get(censoredWord);
+            }
             resultBuilder.append(String.format("%s:%.2f",
-                    word.getWord(), word.getTopicScore()));
+                    censoredWord, word.score));
             if (i < n1 - 1) {
                 resultBuilder.append("\t");
             }
@@ -124,33 +151,8 @@ public class TopicScoreCalculator {
         return resultBuilder.toString();
     }
 
-    public static ArrayList<String> extractWords(String text) {
-        String noUrl = text.replaceAll(shortURLRegex, "");
+    public ArrayList<String> extractWords(String text) {
         ArrayList<String> ws = new ArrayList<>();
-
-        /*
-        boolean alphabet = false;
-        int start = 0;
-        int len = noUrl.length();
-        for (int i = 0; i < len; ++i) {
-            char c = text.charAt(i);
-            if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
-                alphabet = true;
-            } else if (c != '-' && c != '\'' && (c < '0' || c > '9')) {
-                if (start != i && alphabet) {
-                    ws.add(noUrl.substring(start, i));
-                }
-                alphabet = false;
-                start = i + 1;
-            }
-        }
-        if (start != len && alphabet) {
-            ws.add(noUrl.substring(start, len));
-        }
-        return ws;
-        */
-
-        Pattern pattern = Pattern.compile("([A-Za-z0-9'-]*[a-zA-Z][A-Za-z0-9'-]*)");
         String textNoUrl = text.replaceAll(shortURLRegex, "");
         Matcher matcher = pattern.matcher(textNoUrl);
         while(matcher.find()) {

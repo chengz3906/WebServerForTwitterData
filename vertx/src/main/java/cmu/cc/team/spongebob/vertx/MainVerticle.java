@@ -32,6 +32,8 @@ public class MainVerticle extends AbstractVerticle {
     private final QRCodeParser qrCodeParser;
     private final KeyValueLRUCache keyValueCache;
 
+    private static final TopicScoreCalculator topicScoreCalculator = new TopicScoreCalculator();
+
 
     public MainVerticle () {
         qrCodeParser = new QRCodeParser();
@@ -197,7 +199,7 @@ public class MainVerticle extends AbstractVerticle {
                     if (res.succeeded()) {
                         ResultSet resultSet = res.result();
                         MySQLResultSetWrapper rsWrapper = new MySQLResultSetWrapper(resultSet);
-                        String resp = TopicScoreCalculator.getTopicScore(rsWrapper, n1, n2);
+                        String resp = topicScoreCalculator.getTopicScore(rsWrapper, n1, n2);
                         context.response().end(header + resp);
                     } else {
                         LOGGER.error("Could not get query", res.cause());

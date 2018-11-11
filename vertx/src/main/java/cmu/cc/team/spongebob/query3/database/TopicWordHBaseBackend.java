@@ -1,6 +1,7 @@
 package cmu.cc.team.spongebob.query3.database;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -43,6 +44,8 @@ public class TopicWordHBaseBackend {
      */
     private static Configuration conf;
 
+    private static final TopicScoreCalculator topicScoreCalculator = new TopicScoreCalculator();
+
     public TopicWordHBaseBackend() {
         LOGGER.setLevel(Level.OFF);
         conf = HBaseConfiguration.create();
@@ -50,22 +53,40 @@ public class TopicWordHBaseBackend {
         conf.set("hbase.zookeeper.property.clientport", "2181");
     }
 
-    public String query(int n1, int n2) {
+    public String query(int uidStart, int uidEnd, int timeStart, int timeEnd, int n1, int n2) {
 
+        ByteBuffer bf = ByteBuffer.allocate(16);
+        bf.putLong(uidStart);
+        bf.putLong(8, timeStart);
+        byte[] startByte = bf.array();
+        bf = ByteBuffer.allocate(16);
+        bf.putLong(uidEnd);
+        bf.putLong(8, timeEnd);
+        byte[] endByte = bf.array();
+
+        byte[] timeStartByte = Bytes.toBytes(timeStart);
+        byte[] timeEndByte = Bytes.toBytes(timeEnd);
         // Get contact information
         try (Connection conn = ConnectionFactory.createConnection(conf);
              Table twitterTable = conn.getTable(tableName)) {
             Scan scan = new Scan();
-//            BinaryPrefixComparator comp = new BinaryPrefixComparator(userIdBytes);
-//            Filter filter = new RowFilter(
-//                    CompareFilter.CompareOp.EQUAL, comp) {
-//            };
-
-//            PrefixFilter filter = new PrefixFilter(userIdBytes);
-//            scan.setFilter(filter);
+            scan.withStartRow(startByte);
+            scan.withStopRow(endByte);
+            BinaryComparator timeStartComp = new BinaryComparator(timeStartByte);
+            BinaryComparator timeEndComp = new BinaryComparator(timeEndByte);
+            Filter timeStartFilter = new SingleColumnValueFilter(
+                    family, createdAt, CompareFilter.CompareOp.GREATER_OR_EQUAL, timeStartComp
+            );
+            Filter timeEndFilter = new SingleColumnValueFilter(
+                    family, createdAt, CompareFilter.CompareOp.GREATER_OR_EQUAL, timeEndComp
+            );
+            FilterList filters = new FilterList();
+            filters.addFilter(timeStartFilter);
+            filters.addFilter(timeEndFilter);
+            scan.setFilter(filters);
             ResultScanner rs = twitterTable.getScanner(scan);
             HBaseResultSetWrapper rsWrapper = new HBaseResultSetWrapper(rs);
-            return TopicScoreCalculator.getTopicScore(rsWrapper, n1, n2);
+            return topicScoreCalculator.getTopicScore(rsWrapper, n1, n2);
         } catch (IOException e) {
             e.printStackTrace();
         }

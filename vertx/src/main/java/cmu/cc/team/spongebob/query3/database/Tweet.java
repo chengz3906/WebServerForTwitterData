@@ -24,10 +24,13 @@ public class Tweet implements Comparable<Tweet> {
     public int compareTo(Tweet other) {
         if (this.impactScore > other.impactScore) {
             return -1;
-        } else if(this.impactScore < other.impactScore) {
-            return 1;
-        } else {
-            return (int)(other.tweetId - this.tweetId);
         }
+        if (this.impactScore < other.impactScore) {
+            return 1;
+        }
+        if (this.tweetId > other.tweetId) {
+            return -1;
+        }
+        return 1;
     }
 }

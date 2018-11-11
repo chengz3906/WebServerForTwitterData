@@ -31,19 +31,20 @@ public class MainVerticle extends AbstractVerticle {
     private TweetIntimacyHBaseBackend dbReader;
 
     private QRCodeParser parser;
-    private KeyValueLRUCache cache;
+//    private KeyValueLRUCache cache;
 
     public MainVerticle () {
         parser = new QRCodeParser();
-        cache = KeyValueLRUCache.getInstance();
-        dbReader = null;
+//        cache = KeyValueLRUCache.getInstance();
+//        dbReader = null;
     }
 
     @Override
     public void start(Future<Void> startFuture) throws Exception {
         parser = new QRCodeParser();
 //        dbReader = new TweetIntimacyMySQLBackend();
-        cache = KeyValueLRUCache.getInstance();
+        dbReader = new TweetIntimacyHBaseBackend();
+//        cache = KeyValueLRUCache.getInstance();
         executor = vertx.createSharedWorkerExecutor("query2-worker-pool", 50);
         Future<Void> steps = startHttpServer();
         startFuture.complete();
@@ -82,12 +83,13 @@ public class MainVerticle extends AbstractVerticle {
 
         String requestKey = String.format("q1/type=%s&data=%s", type, message);
         // look for it in key value store
-        String resp = cache.get(requestKey);
+//        String resp = cache.get(requestKey);
+        String resp;
 
-        if (resp == null) {
+//        if (resp == null) {
             resp = executeQRCodeRequest(type, message);
-            cache.put(requestKey, resp);
-        }
+//            cache.put(requestKey, resp);
+//        }
         context.response().end(resp);
     }
 
@@ -111,13 +113,13 @@ public class MainVerticle extends AbstractVerticle {
     }
     private void tweetIntimacyHandler(RoutingContext context) {
 
-        if (dbReader == null) {
-            try {
-                dbReader = new TweetIntimacyHBaseBackend();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+//        if (dbReader == null) {
+//            try {
+//                dbReader = new TweetIntimacyHBaseBackend();
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//        }
         String resp = String.format("%s,%s\n", TEAMID, TEAM_AWS_ACCOUNT_ID);
         String phrase = context.request().getParam("phrase");
         String userIdStr = context.request().getParam("user_id");
@@ -134,11 +136,11 @@ public class MainVerticle extends AbstractVerticle {
         // Query cache
         String requestKey = String.format("q2/user_id=%s&phrase=%s&n=%s",
                 userIdStr, phrase, nStr);
-        String info = cache.get(requestKey);
-        if (info != null) {
-            context.response().end(resp + info);
-            return;
-        }
+//        String info = cache.get(requestKey);
+//        if (info != null) {
+//            context.response().end(resp + info);
+//            return;
+//        }
 
         executor.<String>executeBlocking(future -> {
             String queryRes = queryDatabase(userId, phrase, n);
@@ -150,7 +152,7 @@ public class MainVerticle extends AbstractVerticle {
             future.complete(queryRes);
         }, false, res-> {
             if (res.succeeded()) {
-                cache.put(requestKey, res.result());
+//                cache.put(requestKey, res.result());
             } else {
                 res.cause().printStackTrace();
             }
@@ -176,11 +178,12 @@ public class MainVerticle extends AbstractVerticle {
                 // Query cache
                 String requestKey = String.format("q2/user_id=%s&phrase=%s&n=%s",
                         userIdStr, phrase, nStr);
-                String info = cache.get(requestKey);
-                if (info != null) {
-                    context.response().end(resp + info);
-                    return;
-                }
+                String info;
+//                String info = cache.get(requestKey);
+//                if (info != null) {
+//                    context.response().end(resp + info);
+//                    return;
+//                }
 
                 // Query database
                 ArrayList<ContactUser> contactUsers = dbReader.query(userId, phrase);
@@ -200,7 +203,7 @@ public class MainVerticle extends AbstractVerticle {
                 }
                 resp += info;
                 context.response().end(resp);
-                cache.put(requestKey, info);
+//                cache.put(requestKey, info);
             }
         });
         thread.start();

@@ -1,37 +1,38 @@
 package cmu.cc.team.spongebob.query3.database;
 
-import java.sql.ResultSet;
+import io.vertx.core.json.JsonObject;
+import io.vertx.ext.sql.ResultSet;
+
 import java.sql.SQLException;
+import java.util.List;
 
 public class MySQLResultSetWrapper implements TweetResultSetWrapper {
 
-    private final ResultSet rs;
+    private final List<JsonObject> rows;
+    private int index;
+    private int len;
 
-    MySQLResultSetWrapper(ResultSet rs) {
-        this.rs = rs;
+    public MySQLResultSetWrapper(ResultSet rs) {
+        this.rows = rs.getRows();
+        this.index = 0;
+        this.len = this.rows.size();
     }
 
     @Override
     public Tweet next() {
-        try {
-            if (!rs.next()) return null;
-            long tweetId = rs.getLong("tweet_id");
-            String text = rs.getString("text");
-            String censoredText = rs.getString("censored_text");
-            double impactScore = rs.getLong("impact_score");
-            return new Tweet(text, censoredText, tweetId, impactScore);
-        } catch (SQLException e) {
-            e.printStackTrace();
+        if (index >= len) {
+            return null;
         }
-        return null;
+        JsonObject row = rows.get(index);
+        long tweetId = row.getLong("tweet_id");
+        String text = row.getString("text");
+        String censoredText = row.getString("censored_text");
+        double impactScore = row.getLong("impact_score");
+        return new Tweet(text, censoredText, tweetId, impactScore);
     }
 
     @Override
     public void close() {
-        try {
-            rs.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        return;
     }
 }

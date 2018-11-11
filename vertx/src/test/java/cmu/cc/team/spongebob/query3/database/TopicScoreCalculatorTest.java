@@ -47,11 +47,12 @@ class MyResultSet implements TweetResultSetWrapper {
 
     @Override
     public Tweet next() {
+        if (i >= 3) {
+            return null;
+        }
         return tweets.get(i++);
     }
 
     @Override
-    public boolean hasNext() {
-        return i < tweets.size();
-    }
+    public void close() {return;}
 }

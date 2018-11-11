@@ -15,7 +15,7 @@ public class HBaseResultSetWrapper implements TweetResultSetWrapper {
     private final byte[] censoredTextBytes = Bytes.toBytes("censored_text");
     private final byte[] impactScoreBytes = Bytes.toBytes("impact_score");
 
-    HBaseResultSetWrapper(ResultScanner rs) {
+    public HBaseResultSetWrapper(ResultScanner rs) {
         this.rs = rs;
     }
 

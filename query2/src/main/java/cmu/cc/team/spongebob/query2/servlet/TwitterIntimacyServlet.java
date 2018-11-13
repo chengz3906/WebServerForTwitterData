@@ -2,23 +2,25 @@ package cmu.cc.team.spongebob.query2.servlet;
 
 import cmu.cc.team.spongebob.query2.database.ContactUser;
 import cmu.cc.team.spongebob.query2.database.TweetIntimacyMySQLBackend;
+import cmu.cc.team.spongebob.utils.caching.KeyValueLRUCache;
 
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.List;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 
-public class TwitterIntimacyServlet extends HttpServlet{
+public class TwitterIntimacyServlet extends HttpServlet {
     private TweetIntimacyMySQLBackend dbReader;
+    private KeyValueLRUCache cache;
     private final String TEAMID = System.getenv("TEAMID");
     private final String TEAM_AWS_ACCOUNT_ID = System.getenv("TEAM_AWS_ACCOUNT_ID");
 
     public void init() {
         dbReader = new TweetIntimacyMySQLBackend();
+        cache = KeyValueLRUCache.getInstance();
     }
 
     public void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -38,19 +40,32 @@ public class TwitterIntimacyServlet extends HttpServlet{
         Long userId = Long.parseLong(userIdStr);
         int n = Integer.parseInt(nStr);
 
+        // Query cache
+        String requestKey = String.format("q2/user_id=%s&phrase=%s&n=%s",
+                userIdStr, phrase, nStr);
+        String resp = cache.get(requestKey);
+        if (resp != null) {
+            out.print(resp);
+            return;
+        }
+
+        // Query database
         ArrayList<ContactUser> contactUsers = dbReader.query(userId, phrase);
         n = n > contactUsers.size() ? contactUsers.size() : n;
+        resp = "";
         for (int i = 0; i < n; ++i) {
             ContactUser contactUser = contactUsers.get(i);
-            out.print(String.format("%s\t%s\t%s",
+            resp += String.format("%s\t%s\t%s",
                     contactUser.getUserName(),
                     contactUser.getUserDescription(),
-                    contactUser.getTweetText()));
+                    contactUser.getTweetText());
 
             // output new line if it is not the last line
             if (i < n - 1) {
-                out.print("\n");
+                resp += "\n";
             }
         }
+        out.print(resp);
+        cache.put(requestKey, resp);
     }
 }

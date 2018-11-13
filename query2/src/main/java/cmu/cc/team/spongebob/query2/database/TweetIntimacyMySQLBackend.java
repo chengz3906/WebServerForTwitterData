@@ -2,7 +2,8 @@ package cmu.cc.team.spongebob.query2.database;
 
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Collections;
+
 import org.apache.commons.dbcp2.BasicDataSource;
 
 public class TweetIntimacyMySQLBackend {
@@ -47,51 +48,43 @@ public class TweetIntimacyMySQLBackend {
         ArrayList<ContactUser> contacts = new ArrayList<>();
 
         // Get contact information
-        final String sql = String.format(
-                "SELECT uid, tweet_text, intimacy_score, "
-                        + "screen_name, description FROM "
+        final String sql = "SELECT uid, tweet_text, intimacy_score, "
+                        + "screen_name, description, created_at FROM "
                         + "(SELECT user2_id AS uid, tweet_text, "
                         + "intimacy_score, created_at FROM contact_tweet "
-                        + "WHERE user1_id=%d UNION "
+                        + "WHERE user1_id=? UNION "
                         + "SELECT user1_id AS uid, tweet_text, "
                         + "intimacy_score, created_at FROM contact_tweet "
-                        + "WHERE user2_id=%d) AS tweet "
+                        + "WHERE user2_id=?) AS tweet "
                         + "LEFT JOIN contact_user ON tweet.uid=contact_user.id "
-                        + "ORDER BY uid ASC, created_at DESC",
-                userId, userId);
+                        + "ORDER BY uid ASC, created_at DESC";
         try (Connection conn = ds.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
             Long lastUid = null;
+            stmt.setLong(1, userId);
+            stmt.setLong(2, userId);
+            ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
                 Long uid = rs.getLong("uid");
                 String text = rs.getString("tweet_text");
                 double intimacyScore = rs.getDouble("intimacy_score");
                 String screenName = rs.getString("screen_name");
                 String desc = rs.getString("description");
-                if (uid != lastUid) {
+                String createdAt = rs.getString("created_at");
+                if (!uid.equals(lastUid)) {
                     contacts.add(new ContactUser(uid, screenName,
                             desc, intimacyScore));
                     lastUid = uid;
                 }
-                contacts.get(contacts.size() - 1).addTweet(text, phrase);
+                contacts.get(contacts.size() - 1).addTweet(text, phrase, createdAt);
             }
+            rs.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
         // Sort contacts
-        contacts.sort((o1, o2) -> {
-            if (o1.getScore() > o2.getScore()) {
-                return -1;
-            } else if (o1.getScore() < o2.getScore()) {
-                return 1;
-            } else if (o1.getUserId() < o2.getUserId()) {
-                return -1;
-            } else if (o1.getUserId() > o2.getUserId()) {
-                return 1;
-            } else return 0;
-        });
+        Collections.sort(contacts);
         return contacts;
     }
 }

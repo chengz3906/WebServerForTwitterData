@@ -41,7 +41,7 @@ public class HBaseVerticle extends AbstractVerticle {
 
     private static WorkerExecutor executor;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(MainVerticle.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(HBaseVerticle.class);
 
     public HBaseVerticle() throws IOException {
         qrCodeParser = new QRCodeParser();

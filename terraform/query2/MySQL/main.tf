@@ -27,11 +27,13 @@ resource "aws_instance" "mysql_server" {
   volume_tags {
     Name = "HBase ${count.index}"
     Project = "Phase2"
+    teambackend = "mysql"
   }
 
   tags {
     Name = "HBase ${count.index}"
     Project = "Phase2"
+    teambackend = "mysql"
   }
 }
 
@@ -55,7 +57,8 @@ resource "aws_instance" "mysql_server" {
 //  subnets = ["${data.aws_subnet_ids.default_subnet_ids.ids}"]
 //
 //  tags = {
-//    Project = "Phase1"
+//    Project = "Phase2"
+//    teambackend = "mysql"
 //  }
 //}
 //

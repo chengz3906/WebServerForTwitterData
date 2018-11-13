@@ -1,13 +1,9 @@
+#!/usr/bin/env bash
 # update apt-get
-sudo apt-get update
+sudo apt update
+# install java
+sudo apt install -y openjdk-8-jdk
+# run web-tier
+sudo java -jar vertx.jar
 
-# avoid some package unfound bugs
-sleep 30
-
-# install tomcat 8
-sudo apt-get install -y tomcat8
-
-# install servlet
-sudo chown tomcat8:tomcat8 q1.war
-sudo mv q1.war /var/lib/tomcat8/webapps/
 

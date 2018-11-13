@@ -1,4 +1,4 @@
-package cmu.cc.team.spongebob.etl.phase1.s3_to_hfiles;
+package cmu.cc.team.spongebob.etl.hbase;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;

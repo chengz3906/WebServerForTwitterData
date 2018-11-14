@@ -33,21 +33,21 @@ public class MySQLVerticle extends AbstractVerticle {
      * Response header
      */
     private final String TEAMID = System.getenv("TEAMID");
-    private final String TEAM_AWS_ACCOUNT_ID = "TEAM_AWS_ACCOUNT_ID";
+    private final String TEAM_AWS_ACCOUNT_ID = System.getenv("TEAM_AWS_ACCOUNT_ID");
     private final String header = String.format("%s,%s\n", TEAMID, TEAM_AWS_ACCOUNT_ID);
     /**
      * MySQL Database name.
      */
-    private static final String DB_NAME = "twitter";
+    private static final String DB_NAME = System.getenv("MYSQL_DB_NAME");
     /**
      * DNS of Mysql database
      */
-    private static final String DNS = "localhost";
+    private static final String DNS = System.getenv("MYSQL_DNS");
     /**
      * MySQL Username and password.
      */
-    private static final String DB_USER = "spongebob";
-    private static final String DB_PWD = "15619";
+    private static final String DB_USER = System.getenv("MYSQL_USER");
+    private static final String DB_PWD = System.getenv("MYSQL_PWD");
 
     private final int MAX_POOL_SIZE = 500;
     // Vert.x MySQL client

@@ -1,9 +1,6 @@
 package cmu.cc.team.spongebob.qrcode;
 
-<<<<<<< HEAD:vertx/src/test/java/cmu/cc/team/spongebob/query1/qrcode/QRCodeParserTest.java
-=======
 import cmu.cc.team.spongebob.qrcode.utils.BitSquare;
->>>>>>> vertx:vertx/src/test/java/cmu/cc/team/spongebob/qrcode/QRCodeParserTest.java
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

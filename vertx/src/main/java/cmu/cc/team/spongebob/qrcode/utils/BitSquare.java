@@ -1,4 +1,4 @@
-package cmu.cc.team.spongebob.query1.qrcode.utils;
+package cmu.cc.team.spongebob.qrcode.utils;
 
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;

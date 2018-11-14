@@ -1,7 +1,7 @@
-package cmu.cc.team.spongebob.query1.qrcode;
+package cmu.cc.team.spongebob.qrcode;
 
-import cmu.cc.team.spongebob.query1.qrcode.utils.BigEndianBitSet;
-import cmu.cc.team.spongebob.query1.qrcode.utils.BitSquare;
+import cmu.cc.team.spongebob.qrcode.utils.BigEndianBitSet;
+import cmu.cc.team.spongebob.qrcode.utils.BitSquare;
 
 import java.io.*;
 import java.util.ArrayList;

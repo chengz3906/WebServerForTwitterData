@@ -1,4 +1,4 @@
-package cmu.cc.team.spongebob.query1.qrcode.utils;
+package cmu.cc.team.spongebob.qrcode.utils;
 
 import java.util.BitSet;
 

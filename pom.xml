@@ -12,7 +12,6 @@
 
     <modules>
         <module>utils</module>
-        <module>query1</module>
         <module>query2</module>
         <module>vertx</module>
     </modules>

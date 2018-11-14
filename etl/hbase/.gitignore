@@ -1,2 +1,4 @@
 target/
 *.iml
+src/main/java/cmu/cc/team/spongebob/etl/hbase/TweetGet.java
+src/main/java/cmu/cc/team/spongebob/etl/hbase/TweetScan.java

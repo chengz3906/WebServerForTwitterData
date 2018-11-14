@@ -9,11 +9,8 @@ import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.client.RegionLocator;
 import org.apache.hadoop.hbase.client.Table;
-import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
-import org.apache.hadoop.hbase.mapreduce.TableOutputFormat;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
@@ -25,7 +22,7 @@ public class HBaseETLJob {
     /**
      * The private IP address of HBase master node.
      */
-    private static String zkAddr = "172.31.46.38";
+    // private static String zkAddr = "";
 
     public static void main(String[] args) throws Exception {
         String inputPath = args[0];
@@ -36,11 +33,12 @@ public class HBaseETLJob {
         job.setJarByClass(HBaseETLJob.class);
 
         // set s3 credentials
-//        job.getConfiguration().set("fs.s3n.awsAccessKeyId", System.getenv("S3_ACCESS_KEY"));
-//        job.getConfiguration().set("fs.s3n.awsSecretAccessKey", System.getenv("S3_SECRET_KEY"));
-//        conf.set("hbase.master", zkAddr + ":14000");
-//        conf.set("hbase.zookeeper.quorum", zkAddr);
-//        conf.set("hbase.zookeeper.property.clientport", "2181");
+        job.getConfiguration().set("fs.s3n.awsAccessKeyId", System.getenv("S3_ACCESS_KEY"));
+        job.getConfiguration().set("fs.s3n.awsSecretAccessKey", System.getenv("S3_SECRET_KEY"));
+        // conf.set("hbase.master", zkAddr + ":14000");
+        // conf.set("hbase.zookeeper.quorum", zkAddr);
+        // conf.set("hbase.zookeeper.property.clientport", "2181");
+        // Connection testCon = ConnectionFactory.createConnection(conf);
 
         job.setMapperClass(BulkLoadMapper.class);
         job.setReducerClass(BulkLoadReducer.class);
@@ -48,18 +46,17 @@ public class HBaseETLJob {
         job.setMapOutputKeyClass(LongWritable.class);
         job.setMapOutputValueClass(Text.class);
         job.setInputFormatClass(TextInputFormat.class);
-        job.setOutputFormatClass(TableOutputFormat.class);
-        job.getConfiguration().set(TableOutputFormat.OUTPUT_TABLE, "contact_tweet");
-        job.setOutputKeyClass(ImmutableBytesWritable.class);
-        job.setOutputValueClass(Writable.class);
+        job.setOutputFormatClass(HFileOutputFormat2.class);
 
         FileInputFormat.setInputPaths(job, inputPath);
-//        HFileOutputFormat2.setOutputPath(job, new Path(outputPath));
+        HFileOutputFormat2.setOutputPath(job, new Path(outputPath));
 
-//        @Cleanup Connection hbCon = ConnectionFactory.createConnection(conf);
-//        @Cleanup Table hTable = hbCon.getTable(TableName.valueOf("tweet_intimacy"));
-//        @Cleanup RegionLocator regionLocator = hbCon.getRegionLocator(TableName.valueOf("tweet_intimacy"));
-//        HFileOutputFormat2.configureIncrementalLoad(job, hTable, regionLocator);
+        /*
+        @Cleanup Connection hbCon = ConnectionFactory.createConnection(conf);
+        @Cleanup Table hTable = hbCon.getTable(TableName.valueOf("tweet_intimacy"));
+        @Cleanup RegionLocator regionLocator = hbCon.getRegionLocator(TableName.valueOf("tweet_intimacy"));
+        HFileOutputFormat2.configureIncrementalLoad(job, hTable, regionLocator);
+        */
 
         System.exit(job.waitForCompletion(true) ? 0 : 1);
     }

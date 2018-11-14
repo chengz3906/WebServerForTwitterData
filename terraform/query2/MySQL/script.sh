@@ -23,7 +23,6 @@ default-character-set = utf8mb4
 default-character-set = utf8mb4
 " | sudo tee --append /etc/mysql/mysql.conf.d/mysqld.cnf
 
-
 # recover backup
 wget https://s3.amazonaws.com/cmucc-team-phase2/full_backup_innobackupex_mysql/mysql_backup.tar.gz
 tar -xvf mysql_backup.tar.gz # about 5 min

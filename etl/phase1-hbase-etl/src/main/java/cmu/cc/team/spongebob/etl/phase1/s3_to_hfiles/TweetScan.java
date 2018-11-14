@@ -18,7 +18,7 @@ import org.apache.hadoop.util.ToolRunner;
 
 
 public class TweetScan extends Configured implements Tool {
-    private static final Log LOGGER = LogFactory.getLog(HBaseETLJob.class);
+    private static final Log LOGGER = LogFactory.getLog(TweetScan.class);
 
     public static void main(String[] args) throws Exception {
         int status = ToolRunner.run(HBaseConfiguration.create(), new TweetScan(), args);

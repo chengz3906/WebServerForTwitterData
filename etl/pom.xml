@@ -9,6 +9,7 @@
     <version>1.0-SNAPSHOT</version>
     <modules>
         <module>phase1-hbase-etl</module>
+        <module>spark-etl</module>
     </modules>
 
     <packaging>pom</packaging>

@@ -20,7 +20,7 @@ import java.nio.ByteBuffer;
 
 
 public class LoadHBase extends Configured implements Tool {
-    private static final Log LOGGER = LogFactory.getLog(HBaseETLJob.class);
+    private static final Log LOGGER = LogFactory.getLog(LoadHBase.class);
 
     private static final JsonParser jsonParser = new JsonParser();
     private static final byte[] COLF_USER2 = "user2".getBytes();
@@ -33,7 +33,7 @@ public class LoadHBase extends Configured implements Tool {
     private static final byte[] COL_TWEET_CREATED_AT = "created_at".getBytes();
 
     public static void main(String[] args) throws Exception {
-        int status = ToolRunner.run(HBaseConfiguration.create(), new HBaseETLJob(), args);
+        int status = ToolRunner.run(HBaseConfiguration.create(), new LoadHBase(), args);
         System.exit(status);
     }
 

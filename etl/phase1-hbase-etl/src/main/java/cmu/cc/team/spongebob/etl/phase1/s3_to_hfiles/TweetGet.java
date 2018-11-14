@@ -15,7 +15,7 @@ import java.nio.ByteBuffer;
 
 
 public class TweetGet extends Configured implements Tool {
-    private static final Log LOGGER = LogFactory.getLog(HBaseETLJob.class);
+    private static final Log LOGGER = LogFactory.getLog(TweetGet.class);
 
     public static void main(String[] args) throws Exception {
         int status = ToolRunner.run(HBaseConfiguration.create(), new TweetScan(), args);

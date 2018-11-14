@@ -14,7 +14,6 @@ import org.apache.hadoop.hbase.util.Bytes;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-
 public class ContactTweetLoader {
     private static final byte[] COLF_USER2 = "user2".getBytes();
     private static final byte[] COLF_TWEET = "tweet".getBytes();

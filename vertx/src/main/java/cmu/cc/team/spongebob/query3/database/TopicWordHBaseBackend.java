@@ -25,11 +25,11 @@ public class TopicWordHBaseBackend {
     /**
      * The private IP address of HBase master node.
      */
-    private static String zkAddr = "localhost";
+    private static String zkAddr = System.getenv("HBASE_DNS");
     /**
      * The name of your HBase table.
      */
-    private static TableName tableName = TableName.valueOf("topic_word");
+    private static TableName tableName = TableName.valueOf(System.getenv("HBASE_TABLE_NAME"));
     /**
      * Logger.
      */

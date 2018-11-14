@@ -1,6 +1,6 @@
 package cmu.cc.team.spongebob.vertx;
 
-import cmu.cc.team.spongebob.query1.qrcode.QRCodeParser;
+import cmu.cc.team.spongebob.qrcode.QRCodeParser;
 import cmu.cc.team.spongebob.query2.database.ContactUser;
 import cmu.cc.team.spongebob.query2.database.TweetIntimacyHBaseBackend;
 import cmu.cc.team.spongebob.query3.database.TopicWordHBaseBackend;

@@ -15,10 +15,11 @@ resource "aws_instance" "backend_server" {
     private_key = "${file("../../../team-project.pem")}" # variable
   }
 
-  provisioner "file" {
-    source = "../../vertx/target/*-fat.jar" # variable
-    destination = "vertx.jar" # variable
-  }
+//  # upload web-tier
+//  provisioner "file" {
+//    source = "../../vertx/target/*-fat.jar" # variable
+//    destination = "vertx.jar" # variable
+//  }
 
   provisioner "remote-exec" {
     script = "script.sh"

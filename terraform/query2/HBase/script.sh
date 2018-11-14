@@ -14,5 +14,12 @@ mv ~/conf/hbase-site.xml $HBASE_HOME/conf/hbase-site.xml
 
 ./start-hbase.sh
 
+# load data
+# java -cp hbase_etl.jar cmu.cc.team.spongebob.etl.hbase.LoadHBase
+
+# run web-tier
+#sudo java -cp vertx.jar cmu.cc.team.spongebob.vertx.MySQLVerticle
+
+
 
 

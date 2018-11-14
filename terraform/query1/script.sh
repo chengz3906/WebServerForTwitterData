@@ -3,7 +3,8 @@
 sudo apt update
 # install java
 sudo apt install -y openjdk-8-jdk
+
 # run web-tier
-sudo java -jar vertx.jar
+#sudo java -jar vertx.jar
 
 

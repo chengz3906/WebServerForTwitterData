@@ -14,10 +14,17 @@ resource "aws_instance" "hbase_server" {
     private_key = "${file("../../../../team-project.pem")}"
   }
 
-  provisioner "file" {
-    source = "../../vertx/target/*-fat.jar" # variable
-    destination = "vertx.jar" # variable
-  }
+//  # web-tier
+//  provisioner "file" {
+//    source = "../../vertx/target/*-fat.jar" # variable
+//    destination = "vertx.jar" # variable
+//  }
+
+//  # hbase loader
+//  provisioner "file" {
+//    source = "../../etl/hbase-etl/target/hbase_etl.jar" # variable
+//    destination = "hbase_etl.jar" # variable
+//  }
 
   provisioner "file" {
     source = "conf/" # variable
@@ -64,14 +71,14 @@ data "aws_subnet_ids" "default_subnet_ids" {
 }
 
 resource "aws_lb_target_group" "lb_target_group" {
-  name = "tf-lb-tg"
+  name = "hbase-tg"
   port = 80
   protocol = "TCP"
   vpc_id = "${aws_default_vpc.default_vpc.id}"
 }
 
 resource "aws_lb" "lb" {
-  name = "tf-lb"
+  name = "hbase-nlb"
   internal = false
   load_balancer_type = "network"
   subnets = ["${data.aws_subnet_ids.default_subnet_ids.ids}"]

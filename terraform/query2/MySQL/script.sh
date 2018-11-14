@@ -35,6 +35,11 @@ sudo chown -R mysql:mysql /var/lib/mysql
 sudo service mysql start
 rm -r ./2018-11-07_02-37-03/
 
+# run web-tier
+#sudo java -cp vertx.jar cmu.cc.team.spongebob.vertx.MySQLVerticle
+
+
+
 # Full backup
 # sudo innobackupex --user=DBUSER --password=DBUSERPASS /path/to/BACKUP-DIR/
 # Full restore

@@ -15,17 +15,18 @@ resource "aws_instance" "backend_server" {
     private_key = "${file("../../../team-project.pem")}" # variable
   }
 
-  provisioner "file" {
-    source = "../../query1/target/q1.war" # variable
-    destination = "q1.war" # variable
-  }
+//  # upload web-tier
+//  provisioner "file" {
+//    source = "../../vertx/target/*-fat.jar" # variable
+//    destination = "vertx.jar" # variable
+//  }
 
   provisioner "remote-exec" {
     script = "script.sh"
   }
 
   tags {
-    Name = "QR Code M5 ${count.index}"
+    Name = "QRCode ${count.index}"
     Project = "Phase2"
   }
 }
@@ -38,14 +39,9 @@ data "aws_subnet_ids" "default_subnet_ids" {
 
 resource "aws_lb_target_group" "lb_target_group" {
   name = "tf-lb-tg"
-  port = 8080
+  port = 80
   protocol = "TCP"
   vpc_id = "${aws_default_vpc.default_vpc.id}"
-  health_check {
-    port = "8080"
-    protocol = "HTTP"
-    path = "/q1/heartbeat"
-  }
 }
 
 resource "aws_lb" "lb" {

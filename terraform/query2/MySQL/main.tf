@@ -14,25 +14,11 @@ resource "aws_instance" "mysql_server" {
     private_key = "${file("../../../../team-project.pem")}"
   }
 
-  provisioner "file" {
-    source = "config_mysql.sql"
-    destination = "config_mysql.sql"
-  }
-
-  provisioner "file" {
-    source = "../../../query1/target/q1.war"
-    destination = "q1.war"
-  }
-
-  provisioner "file" {
-    source = "../../../query2/target/q2.war"
-    destination = "q2.war"
-  }
-
-  provisioner "file" {
-    source = "create_twitter_database.sql"
-    destination = "create_twitter_database.sql"
-  }
+//  # web-tier
+//  provisioner "file" {
+//    source = "../../vertx/target/*-fat.jar" # variable
+//    destination = "vertx.jar" # variable
+//  }
 
   provisioner "remote-exec" {
     script = "script.sh"
@@ -40,18 +26,20 @@ resource "aws_instance" "mysql_server" {
 
   root_block_device {
     volume_type = "gp2"
-    volume_size = "20"
+    volume_size = "100"
     delete_on_termination = "true"
   }
 
   volume_tags {
-    Name = "MySQL"
-    Project = "Phase1"
+    Name = "MySQL ${count.index}"
+    Project = "Phase2"
+    teambackend = "mysql"
   }
 
   tags {
-    Name = "MySQL"
-    Project = "Phase1"
+    Name = "MySQL ${count.index}"
+    Project = "Phase2"
+    teambackend = "mysql"
   }
 }
 
@@ -62,20 +50,21 @@ data "aws_subnet_ids" "default_subnet_ids" {
 }
 
 resource "aws_lb_target_group" "lb_target_group" {
-  name = "tf-lb-tg"
-  port = 8080
+  name = "mysql-tg"
+  port = 80
   protocol = "TCP"
   vpc_id = "${aws_default_vpc.default_vpc.id}"
 }
 
 resource "aws_lb" "lb" {
-  name = "tf-lb"
+  name = "mysql-nlb"
   internal = false
   load_balancer_type = "network"
   subnets = ["${data.aws_subnet_ids.default_subnet_ids.ids}"]
 
   tags = {
-    Project = "Phase1"
+    Project = "Phase2"
+    teambackend = "mysql"
   }
 }
 

@@ -9,12 +9,9 @@ variable "instance_type" {
 }
 
 variable "instance_num" {
-  default = 5
+  default = 6
 }
 
-# Update "key_name" with the key pair name for SSH connection
-# Note: it is NOT the path of the pem file
-# you can find it in https://console.aws.amazon.com/ec2/v2/home?region=us-east-1#KeyPairs:sort=keyName
 variable "key_name" {
   default = "team-project"
 }

@@ -15,5 +15,5 @@ variable "key_name" {
 
 # instance number
 variable "count" {
-  default = 5
+  default = 6
 }

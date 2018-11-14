@@ -221,56 +221,6 @@ public class MySQLVerticle extends AbstractVerticle {
         });
     }
 
-    private String queryHBase(Long userId, String phrase, int n) {
-        ArrayList<ContactUser> contactUsers = dbReader.query(userId, phrase);
-        n = n > contactUsers.size() ? contactUsers.size() : n;
-        String info = "";
-        for (int i = 0; i < n; ++i) {
-            ContactUser contactUser = contactUsers.get(i);
-            info += String.format("%s\t%s\t%s",
-                    contactUser.getUserName(),
-                    contactUser.getUserDescription(),
-                    contactUser.getTweetText());
-
-            // output new line if it is not the last line
-            if (i < n - 1) {
-                info += "\n";
-            }
-        }
-        return info;
-    }
-
-//    private void tweetIntimacyHBaseHandler(RoutingContext context) {
-//        String resp = String.format("%s,%s\n", TEAMID, TEAM_AWS_ACCOUNT_ID);
-//        String phrase = context.request().getParam("phrase");
-//        String userIdStr = context.request().getParam("user_id");
-//        String nStr = context.request().getParam("n");
-//        if (phrase == null || phrase.isEmpty()
-//                || userIdStr == null || userIdStr.isEmpty()
-//                || nStr == null || nStr.isEmpty()) {
-//            context.response().end(resp);
-//            return;
-//        }
-//        Long userId = Long.parseLong(userIdStr);
-//        int n = Integer.parseInt(nStr);
-//
-//        // Query cache
-//        executor.<String>executeBlocking(future -> {
-//            String queryRes = queryHBase(userId, phrase, n);
-//            try {
-//                context.response().end(resp + queryRes);
-//            } catch (IllegalStateException e) {
-//                System.out.println("Response closed");
-//            }
-//            future.complete(queryRes);
-//        }, false, res-> {
-//            if (res.succeeded()) {
-//            } else {
-//                res.cause().printStackTrace();
-//            }
-//        });
-//    }
-
     private void topicWordMySQLHandler(RoutingContext context) {
         final String uidStartStr = context.request().getParam("uid_start");
         final String uidEndStr = context.request().getParam("uid_end");
@@ -325,42 +275,5 @@ public class MySQLVerticle extends AbstractVerticle {
         });
     }
 
-//    private void topicWordHBaseHandler(RoutingContext context) {
-//        final String uidStartStr = context.request().getParam("uid_start");
-//        final String uidEndStr = context.request().getParam("uid_end");
-//        final String timeStartStr = context.request().getParam("time_start");
-//        final String timeEndStr = context.request().getParam("time_end");
-//        final String n1Str = context.request().getParam("n1");
-//        final String n2Str = context.request().getParam("n2");
-//        if (uidStartStr == null || uidStartStr.isEmpty()
-//                || uidEndStr == null || uidEndStr.isEmpty()
-//                || timeStartStr == null || timeStartStr.isEmpty()
-//                || timeEndStr == null || timeEndStr.isEmpty()
-//                || n1Str == null || n1Str.isEmpty()
-//                || n2Str == null || n2Str.isEmpty()) {
-//            context.response().end(header);
-//            return;
-//        }
-//        final Long uidStart = Long.parseLong(uidStartStr);
-//        final Long uidEnd = Long.parseLong(uidEndStr);
-//        final Long timeStart = Long.parseLong(timeStartStr);
-//        final Long timeEnd = Long.parseLong(timeEndStr);
-//        final int n1 = Integer.parseInt(n1Str);
-//        final int n2 = Integer.parseInt(n2Str);
-//
-//        WorkerExecutor executor;
-//        executor = vertx.createSharedWorkerExecutor("query3-worker-pool", 50);
-//        executor.<String>executeBlocking(future -> {
-//            String queryRes = topicWordDBReader.query(uidStart, uidEnd, timeStart, timeEnd, n1, n2);
-//            try {
-//                context.response().end(header + queryRes);
-//            } catch (IllegalStateException e) {
-//                System.out.println("Response closed");
-//            }
-//            future.complete(queryRes);
-//        }, false, res-> {
-//            executor.close();
-//        });
-//    }
 }
 

@@ -1,12 +1,7 @@
 package cmu.cc.team.spongebob.qrcode;
 
-<<<<<<< HEAD:vertx/src/main/java/cmu/cc/team/spongebob/query1/qrcode/QRCodeParser.java
-import cmu.cc.team.spongebob.query1.qrcode.utils.BigEndianBitSet;
-=======
 import cmu.cc.team.spongebob.qrcode.utils.BigEndianBitSet;
 import cmu.cc.team.spongebob.qrcode.utils.BitSquare;
->>>>>>> vertx:vertx/src/main/java/cmu/cc/team/spongebob/qrcode/QRCodeParser.java
-
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;

@@ -4,3 +4,7 @@ notebooks/
 scripts/
 *.iml
 *.pem
+
+*.csv
+*.json
+*.txt

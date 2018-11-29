@@ -63,7 +63,7 @@ public class TweetIntimacyMySQLBackend {
                 double intimacyScore = rs.getDouble("intimacy_score");
                 String screenName = rs.getString("user2_screen_name");
                 String desc = rs.getString("user2_desc");
-                String createdAt = rs.getString("created_at");
+                Long createdAt = rs.getLong("created_at");
                 if (!uid.equals(lastUid)) {
                     contacts.add(new ContactUser(uid, screenName,
                             desc, intimacyScore));

@@ -160,14 +160,29 @@ public class MySQLVerticle extends AbstractVerticle {
             if (car.succeeded()) {
                 SQLConnection connection = car.result();
 
-                final String sql = "SELECT user2_id, tweet_text, intimacy_score, "
-                        + "user2_screen_name, user2_desc, created_at FROM "
-                        + "contact_tweet WHERE user1_id=? "
-                        + "ORDER BY user2_id ASC, created_at DESC";
+                final String sql = "SELECT user2_id as user_id, "
+                        + "tweet_text, "
+                        + "intimacy_score, "
+                        + "user2_screen_name as user_screen_name, "
+                        + "user2_desc as user_desc, "
+                        + "created_at "
+                        + "FROM user_intimacy "
+                        + "WHERE user1_id = ? "
+                        + "UNION "
+                        + "SELECT user1_id as user_id, "
+                        + "tweet_text, "
+                        + "intimacy_score, "
+                        + "user1_screen_name as user_screen_name, "
+                        + "user1_desc as user_desc, "
+                        + "created_at "
+                        + "FROM user_intimacy "
+                        + "WHERE user2_id = ? "
+                        + "ORDER BY user_id ASC, created_at DESC";
+
                 final Long userId = Long.parseLong(userIdStr);
                 final int n = Integer.parseInt(nStr);
 
-                final JsonArray params = new JsonArray().add(userId);
+                final JsonArray params = new JsonArray().add(userId).add(userId);
 
                 connection.queryWithParams(sql, params, res -> {
                     connection.close();
@@ -178,12 +193,12 @@ public class MySQLVerticle extends AbstractVerticle {
                         List<JsonObject> rows = resultSet.getRows();
 
                         for (JsonObject row: rows) {
-                            Long uid = row.getLong("user2_id");
+                            Long uid = row.getLong("user_id");
                             String text = row.getString("tweet_text");
                             double intimacyScore = row.getDouble("intimacy_score");
-                            String screenName = row.getString("user2_screen_name");
-                            String desc = row.getString("user2_desc");
-                            String createdAt = row.getString("created_at");
+                            String screenName = row.getString("user_screen_name");
+                            String desc = row.getString("user_desc");
+                            Long createdAt = row.getLong("created_at");
                             if (!uid.equals(lastUid)) {
                                 contacts.add(new ContactUser(uid, screenName,
                                         desc, intimacyScore));

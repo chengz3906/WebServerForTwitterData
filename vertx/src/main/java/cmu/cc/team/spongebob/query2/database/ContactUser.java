@@ -26,7 +26,7 @@ public class ContactUser implements Comparable<ContactUser> {
         this.tweets = new PriorityQueue<>();
     }
 
-    public void addTweet(String text, String phrase, String createdAt) {
+    public void addTweet(String text, String phrase, Long createdAt) {
         ContactTweet tweet = new ContactTweet(text, phrase, createdAt);
         int phraseCount = tweet.getPhraseCount();
         this.phraseScore += phraseCount;

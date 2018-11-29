@@ -6,15 +6,14 @@
 
 package cmu.cc.team.spongebob.spark_etl
 
-import org.apache.spark.SparkConf
 import org.apache.spark.sql.expressions.Window
 import org.apache.spark.sql.functions.{row_number, to_timestamp, when}
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
+import org.apache.spark.storage.StorageLevel
 
 object UserIntimacy {
   // create Spark session
-  private val sparkConf = new SparkConf()
-  @transient private val spark = SparkSession.builder().config(sparkConf).getOrCreate()
+  @transient private val spark = SparkSession.builder().getOrCreate()
   import spark.implicits._
   @transient private val sc = spark.sparkContext
 
@@ -22,7 +21,6 @@ object UserIntimacy {
                           tweet_text: String, created_at: Long)
 
   def main(args: Array[String]): Unit = {
-
     val inputPath = args(0)
     val inputFilename = args(1)
     val outputPath = args(2)
@@ -155,6 +153,6 @@ object UserIntimacy {
         to_timestamp($"created_at", "EEE MMM dd HH:mm:ss Z yyyy").cast("long")) // parse timestamp
       .withColumn("user_created_at", $"created_at")
       .withColumn("retweet_user_created_at", $"created_at")
-      .cache()
+      .persist(StorageLevel.MEMORY_AND_DISK_SER)
   }
 }

@@ -8,6 +8,7 @@ import java.util.Properties
 object LoadMySQL {
   def main(args: Array[String]): Unit = {
     val jdbcHostname = args(0)
+    // TODO put credentials in a config file
     val jdbcPort = "3306"
     val jdbcDatabase = "twitter_analytics"
     val jdbcUsername = "spongebob"
@@ -46,8 +47,8 @@ object LoadMySQL {
 
     // load tables
     val spark = SparkSession.builder().getOrCreate()
-    val topicWordsDF = spark.read.parquet("gs://topic-words/topic_words_parquet_part0")
-    val userIntmacyDF = spark.read.parquet("gs://user-intimacy/user_intimacy_parquet_part0")
+    val topicWordsDF = spark.read.parquet("gs://topic-words/topic_words_parquet")
+    val userIntmacyDF = spark.read.parquet("gs://user-intimacy/user_intimacy_parquet")
     topicWordsDF.write.mode(SaveMode.Append)
       .option("charSet", "utf8mb4")
       .option("useUnicode", "true")

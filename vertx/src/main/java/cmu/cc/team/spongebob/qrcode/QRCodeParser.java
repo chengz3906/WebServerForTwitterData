@@ -1,7 +1,7 @@
 package cmu.cc.team.spongebob.qrcode;
 
 import cmu.cc.team.spongebob.qrcode.utils.BigEndianBitSet;
-import cmu.cc.team.spongebob.qrcode.utils.BitSquare;
+
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;

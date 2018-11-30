@@ -2,13 +2,11 @@ package cmu.cc.team.spongebob.vertx;
 
 import cmu.cc.team.spongebob.qrcode.QRCodeParser;
 import cmu.cc.team.spongebob.query2.database.ContactUser;
-import cmu.cc.team.spongebob.query2.database.TweetIntimacyMySQLBackend;
 import cmu.cc.team.spongebob.query3.database.MySQLResultSetWrapper;
 import cmu.cc.team.spongebob.query3.database.TopicScoreCalculator;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
-import io.vertx.core.WorkerExecutor;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -20,9 +18,11 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Scanner;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,48 +35,70 @@ public class MySQLVerticle extends AbstractVerticle {
     private final String TEAMID = System.getenv("TEAMID");
     private final String TEAM_AWS_ACCOUNT_ID = System.getenv("TEAM_AWS_ACCOUNT_ID");
     private final String header = String.format("%s,%s\n", TEAMID, TEAM_AWS_ACCOUNT_ID);
+
     /**
      * MySQL Database name.
      */
     private static final String DB_NAME = System.getenv("MYSQL_DB_NAME");
+
     /**
      * DNS of Mysql database
      */
     private static final String DNS = System.getenv("MYSQL_DNS");
+
     /**
-     * MySQL Username and password.
+     * MySQL Client config
      */
     private static final String DB_USER = System.getenv("MYSQL_USER");
     private static final String DB_PWD = System.getenv("MYSQL_PWD");
-
     private final int MAX_POOL_SIZE = 500;
-    // Vert.x MySQL client
+
     private SQLClient mySQLClient;
 
+    /*
+     * Backend logic
+     */
     private QRCodeParser qrCodeParser;
-
-    private static WorkerExecutor executor;
-    private TweetIntimacyMySQLBackend dbReader;
-//    private TweetIntimacyHBaseBackend dbReader;
-
     private static TopicScoreCalculator topicScoreCalculator;
-//    private static TopicWordHBaseBackend topicWordDBReader;
+
+    /*
+     * sql queries
+     */
+    private final String query2SQL;
+    private final String query3SQL;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MySQLVerticle.class);
 
     public MySQLVerticle() throws IOException {
         qrCodeParser = new QRCodeParser();
-        dbReader = new TweetIntimacyMySQLBackend();
-//        dbReader = new TweetIntimacyHBaseBackend();
-//        topicWordDBReader = new TopicWordHBaseBackend();
         topicScoreCalculator = new TopicScoreCalculator();
+
+        // load query 2 SQL statement
+        ClassLoader classLoader = this.getClass().getClassLoader();
+        StringBuilder q2StringBuilder = new StringBuilder();
+        InputStream in = classLoader.getResourceAsStream("query2.sql");
+        try (Scanner scanner = new Scanner(in)) {
+            while (scanner.hasNextLine()) {
+                q2StringBuilder.append(scanner.nextLine());
+            }
+        }
+        query2SQL = q2StringBuilder.toString();
+        LOGGER.info(query2SQL);
+
+        // load query 3
+        StringBuilder q3StringBuilder = new StringBuilder();
+        in = classLoader.getResourceAsStream("query3.sql");
+        try (Scanner scanner = new Scanner(in)) {
+            while (scanner.hasNextLine()) {
+                q3StringBuilder.append(scanner.nextLine());
+            }
+        }
+        query3SQL = q3StringBuilder.toString();
+        LOGGER.info(query3SQL);
     }
 
     @Override
     public void start(Future<Void> startFuture) {
-//        executor = vertx.createSharedWorkerExecutor("query2-worker-pool", 50);
-//        Future<Void> steps = startHttpServer();
-//        startFuture.complete();
         Future<Void> steps = prepareDatabase().compose(v -> startHttpServer());
         steps.setHandler(startFuture.completer());
     }
@@ -103,7 +125,7 @@ public class MySQLVerticle extends AbstractVerticle {
 
         Router router = Router.router(vertx);
         router.get("/").handler(this::indexHandler);
-        router.get("/q1").handler(this::qrcodeHandler);
+        router.get("/q1").handler(this::qrCodeHandler);
         router.get("/q2").handler(this::tweetIntimacyMySQLHandler);
         router.get("/q3").handler(this::topicWordMySQLHandler);
 
@@ -125,7 +147,7 @@ public class MySQLVerticle extends AbstractVerticle {
         context.response().end("Heartbeat: Hello from Vert.x!");
     }
 
-    private void qrcodeHandler(RoutingContext context) {
+    private void qrCodeHandler(RoutingContext context) {
         String type = context.request().getParam("type");
         String message = context.request().getParam("data");
 
@@ -160,31 +182,12 @@ public class MySQLVerticle extends AbstractVerticle {
             if (car.succeeded()) {
                 SQLConnection connection = car.result();
 
-                final String sql = "SELECT user2_id as user_id, "
-                        + "tweet_text, "
-                        + "intimacy_score, "
-                        + "user2_screen_name as user_screen_name, "
-                        + "user2_desc as user_desc, "
-                        + "created_at "
-                        + "FROM user_intimacy "
-                        + "WHERE user1_id = ? "
-                        + "UNION "
-                        + "SELECT user1_id as user_id, "
-                        + "tweet_text, "
-                        + "intimacy_score, "
-                        + "user1_screen_name as user_screen_name, "
-                        + "user1_desc as user_desc, "
-                        + "created_at "
-                        + "FROM user_intimacy "
-                        + "WHERE user2_id = ? "
-                        + "ORDER BY user_id ASC, created_at DESC";
-
                 final Long userId = Long.parseLong(userIdStr);
                 final int n = Integer.parseInt(nStr);
 
                 final JsonArray params = new JsonArray().add(userId).add(userId);
 
-                connection.queryWithParams(sql, params, res -> {
+                connection.queryWithParams(query2SQL, params, res -> {
                     connection.close();
                     if (res.succeeded()) {
                         ArrayList<ContactUser> contacts = new ArrayList<>();
@@ -208,22 +211,21 @@ public class MySQLVerticle extends AbstractVerticle {
                         }
 
                         Collections.sort(contacts);
-                        String resp = "";
+                        StringBuilder respStringBuilder = new StringBuilder();
                         int numTweets = n > contacts.size() ? contacts.size() : n;
                         for (int i = 0; i < numTweets; ++i) {
                             ContactUser contactUser = contacts.get(i);
-                            resp += String.format("%s\t%s\t%s",
+                            respStringBuilder.append(String.format("%s\t%s\t%s",
                                     contactUser.getUserName(),
                                     contactUser.getUserDescription(),
-                                    contactUser.getTweetText());
+                                    contactUser.getTweetText()));
 
                             // output new line if it is not the last line
                             if (i < numTweets - 1) {
-                                resp += "\n";
+                                respStringBuilder.append('\n');
                             }
                         }
-//
-                        context.response().end(header + resp);
+                        context.response().end(header + respStringBuilder);
                     } else {
                         LOGGER.error("Could not get query", res.cause());
                         context.fail(res.cause());
@@ -256,10 +258,6 @@ public class MySQLVerticle extends AbstractVerticle {
             if (car.succeeded()) {
                 SQLConnection connection = car.result();
 
-                final String sql = "SELECT tweet_id, text, censored_text, impact_score "
-                        + "FROM topic_word "
-                        + "WHERE (user_id BETWEEN ? AND ?) "
-                        + "AND (created_at BETWEEN ? AND ?) ";
                 final Long uidStart = Long.parseLong(uidStartStr);
                 final Long uidEnd = Long.parseLong(uidEndStr);
                 final Long timeStart = Long.parseLong(timeStartStr);
@@ -271,7 +269,7 @@ public class MySQLVerticle extends AbstractVerticle {
                         .add(uidStart).add(uidEnd)
                         .add(timeStart).add(timeEnd);
 
-                connection.queryWithParams(sql, params, res -> {
+                connection.queryWithParams(query3SQL, params, res -> {
                     connection.close();
                     if (res.succeeded()) {
                         ResultSet resultSet = res.result();
@@ -289,6 +287,5 @@ public class MySQLVerticle extends AbstractVerticle {
             }
         });
     }
-
 }
 

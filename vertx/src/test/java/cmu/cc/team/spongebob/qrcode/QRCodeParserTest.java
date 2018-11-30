@@ -1,6 +1,5 @@
 package cmu.cc.team.spongebob.qrcode;
 
-import cmu.cc.team.spongebob.qrcode.utils.BitSquare;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

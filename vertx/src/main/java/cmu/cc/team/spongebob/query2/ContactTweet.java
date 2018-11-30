@@ -1,4 +1,4 @@
-package cmu.cc.team.spongebob.query2.database;
+package cmu.cc.team.spongebob.query2;
 
 
 import lombok.Getter;

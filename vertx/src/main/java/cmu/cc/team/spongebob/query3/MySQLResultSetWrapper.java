@@ -1,9 +1,8 @@
-package cmu.cc.team.spongebob.query3.database;
+package cmu.cc.team.spongebob.query3;
 
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.sql.ResultSet;
 
-import java.sql.SQLException;
 import java.util.List;
 
 public class MySQLResultSetWrapper implements TweetResultSetWrapper {

@@ -1,4 +1,4 @@
-package cmu.cc.team.spongebob.query3.database;
+package cmu.cc.team.spongebob.query3;
 
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;

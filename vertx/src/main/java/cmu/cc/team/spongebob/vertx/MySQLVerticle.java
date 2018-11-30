@@ -1,9 +1,9 @@
 package cmu.cc.team.spongebob.vertx;
 
 import cmu.cc.team.spongebob.qrcode.QRCodeParser;
-import cmu.cc.team.spongebob.query2.database.ContactUser;
-import cmu.cc.team.spongebob.query3.database.MySQLResultSetWrapper;
-import cmu.cc.team.spongebob.query3.database.TopicScoreCalculator;
+import cmu.cc.team.spongebob.query2.ContactUser;
+import cmu.cc.team.spongebob.query3.MySQLResultSetWrapper;
+import cmu.cc.team.spongebob.query3.TopicScoreCalculator;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
@@ -288,4 +288,3 @@ public class MySQLVerticle extends AbstractVerticle {
         });
     }
 }
-

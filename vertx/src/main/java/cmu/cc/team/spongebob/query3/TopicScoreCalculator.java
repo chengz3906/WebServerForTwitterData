@@ -1,9 +1,8 @@
-package cmu.cc.team.spongebob.query3.database;
+package cmu.cc.team.spongebob.query3;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.commons.lang3.tuple.MutablePair;
-import org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
 
 import java.io.*;
 import java.lang.Math;

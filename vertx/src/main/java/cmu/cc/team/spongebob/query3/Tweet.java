@@ -1,4 +1,4 @@
-package cmu.cc.team.spongebob.query3.database;
+package cmu.cc.team.spongebob.query3;
 
 import lombok.Data;
 

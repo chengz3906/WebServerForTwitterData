@@ -1,4 +1,4 @@
-package cmu.cc.team.spongebob.query3.database;
+package cmu.cc.team.spongebob.query3;
 
 interface TweetResultSetWrapper {
     Tweet next();

@@ -20,10 +20,7 @@ import io.vertx.ext.web.RoutingContext;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -213,21 +210,26 @@ public class MySQLVerticle extends AbstractVerticle {
                                 })
                                 .endHandler(v -> {});
 
-                        Collections.sort(contacts);
+                        // Sort contacts
+                        PriorityQueue<ContactUser> sortedContacts = new PriorityQueue<>();
+                        for (ContactUser cu : contacts) {
+                            sortedContacts.add(cu);
+                            if (sortedContacts.size() > n) {
+                                sortedContacts.poll();
+                            }
+                        }
+                        ArrayList<ContactUser> reversedContacts = new ArrayList<>();
+                        while (!sortedContacts.isEmpty()) {
+                            reversedContacts.add(0, sortedContacts.poll());
+                        }
                         StringBuilder respStringBuilder = new StringBuilder();
-                        int numTweets = n > contacts.size() ? contacts.size() : n;
-                        for (int i = 0; i < numTweets; ++i) {
-                            ContactUser contactUser = contacts.get(i);
-                            respStringBuilder.append(String.format("%s\t%s\t%s",
+                        for (ContactUser contactUser : reversedContacts) {
+                            respStringBuilder.append(String.format("%s\t%s\t%s\n",
                                     contactUser.getUserName(),
                                     contactUser.getUserDescription(),
                                     contactUser.getTweetText()));
-
-                            // output new line if it is not the last line
-                            if (i < numTweets - 1) {
-                                respStringBuilder.append('\n');
-                            }
                         }
+                        respStringBuilder.deleteCharAt(respStringBuilder.length() - 1);
                         context.response().end(header + respStringBuilder);
                     } else {
                         LOGGER.error("Could not get query", res.cause());

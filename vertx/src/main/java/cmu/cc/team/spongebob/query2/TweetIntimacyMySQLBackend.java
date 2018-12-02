@@ -3,6 +3,7 @@ package cmu.cc.team.spongebob.query2;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.PriorityQueue;
 
 import org.apache.commons.dbcp2.BasicDataSource;
 
@@ -44,7 +45,7 @@ public class TweetIntimacyMySQLBackend {
         ds.setMaxIdle(20);
     }
 
-    public ArrayList<ContactUser> query(Long userId, String phrase) {
+    public ArrayList<ContactUser> query(Long userId, String phrase, int n) {
         ArrayList<ContactUser> contacts = new ArrayList<>();
 
         // Get contact information
@@ -77,7 +78,17 @@ public class TweetIntimacyMySQLBackend {
         }
 
         // Sort contacts
-        Collections.sort(contacts);
-        return contacts;
+        PriorityQueue<ContactUser> sortedContacts = new PriorityQueue<>();
+        for (ContactUser cu : contacts) {
+            sortedContacts.add(cu);
+            if (sortedContacts.size() > n) {
+                sortedContacts.poll();
+            }
+        }
+        ArrayList<ContactUser> reversedContacts = new ArrayList<>();
+        while (!sortedContacts.isEmpty()) {
+            reversedContacts.add(0, sortedContacts.poll());
+        }
+        return reversedContacts;
     }
 }

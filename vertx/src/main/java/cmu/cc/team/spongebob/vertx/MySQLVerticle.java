@@ -185,7 +185,7 @@ public class MySQLVerticle extends AbstractVerticle {
                 final Long userId = Long.parseLong(userIdStr);
                 final int n = Integer.parseInt(nStr);
 
-                final JsonArray params = new JsonArray().add(userId).add(userId);
+                final JsonArray params = new JsonArray().add(userId);
 
                 connection.queryWithParams(query2SQL, params, res -> {
                     connection.close();

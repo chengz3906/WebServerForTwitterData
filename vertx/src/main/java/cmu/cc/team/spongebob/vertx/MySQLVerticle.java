@@ -291,8 +291,7 @@ public class MySQLVerticle extends AbstractVerticle {
                     connection.close();
                     if (res.succeeded()) {
                         SQLRowStream sqlRowStream = res.result();
-                        String resp = topicScoreCalculator.getTopicScore(sqlRowStream, n1, n2);
-                        context.response().end(header + resp);
+                        topicScoreCalculator.getTopicScore(sqlRowStream, n1, n2, context, header);
                     } else {
                         LOGGER.error("Could not get query", res.cause());
                         context.fail(res.cause());

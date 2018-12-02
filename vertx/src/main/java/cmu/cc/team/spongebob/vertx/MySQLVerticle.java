@@ -182,49 +182,47 @@ public class MySQLVerticle extends AbstractVerticle {
                 final Long userId = Long.parseLong(userIdStr);
                 final int n = Integer.parseInt(nStr);
 
-                final JsonArray params = new JsonArray().add(userId).add(userId);
+                final JsonArray params = new JsonArray().add(userId);
 
-                connection.queryStreamWithParams(query2SQL, params, res -> {
+                connection.queryWithParams(query2SQL, params, res -> {
                     connection.close();
                     if (res.succeeded()) {
                         ArrayList<ContactUser> contacts = new ArrayList<>();
-                        SQLRowStream sqlRowStream = res.result();
-                        sqlRowStream
-                                .resultSetClosedHandler(v -> {
-                                    sqlRowStream.moreResults();
-                                })
-                                .handler(row -> {
-                                    JsonArray uids = row.getJsonArray(0);
-                                    JsonArray texts = row.getJsonArray(1);
-                                    JsonArray screenNames = row.getJsonArray(2);
-                                    JsonArray descs = row.getJsonArray(3);
-                                    JsonArray intimacyScores = row.getJsonArray(4);
-                                    JsonArray createdAts = row.getJsonArray(5);
-                                    int userNum = uids.size();
-                                    for (int i = 0; i < userNum; ++i) {
-                                        long uid = uids.getLong(i);
-                                        String screenName = screenNames.getString(i);
-                                        String desc = descs.getString(i);
-                                        double intimacyScore = intimacyScores.getDouble(i);
-                                        JsonArray uTexts = texts.getJsonArray(i);
-                                        JsonArray uCreatedAts = createdAts.getJsonArray(i);
-                                        int textNum = uTexts.size();
+                        ResultSet resultSet = res.result();
+                        JsonObject row = resultSet.getRows().get(0);
 
-                                        if (screenName.equals("$NULL$")) {
-                                            screenName = null;
-                                        }
-                                        if (desc.equals("$NULL$")) {
-                                            desc = null;
-                                        }
-                                        ContactUser user = new ContactUser(uid, screenName, desc, intimacyScore);
-                                        for (int j = 0; j < textNum; ++j) {
-                                            String text = uTexts.getString(j);
-                                            long createdAt = uCreatedAts.getLong(i);
-                                            user.addTweet(text, phrase, createdAt);
-                                        }
-                                        contacts.add(user);
-                                    }})
-                                .endHandler(v -> {});
+                        JsonArray uids = new JsonArray(row.getString("user2_ids"));
+                        List<List<String>> texts = new JsonArray(row.getString("texts")).getList();
+                        JsonArray screenNames = new JsonArray(row.getString("user2_screen_names"));
+                        JsonArray descs = new JsonArray(row.getString("user2_descs"));
+                        JsonArray intimacyScores = new JsonArray(row.getString("intimacy_scores"));
+                        List<List<Long>> createdAts = new JsonArray(row.getString("created_ats")).getList();
+                        int userNum = uids.size();
+                        for (int i = 0; i < userNum; ++i) {
+                            long uid = uids.getLong(i);
+                            String screenName = screenNames.getString(i);
+                            String desc = descs.getString(i);
+                            double intimacyScore = intimacyScores.getDouble(i);
+                            List<String> uTexts = texts.get(i);
+                            List<Long> uCreatedAts = createdAts.get(i);
+                            int textNum = uTexts.size();
+
+                            if (screenName.equals("$NULL$")) {
+                                screenName = null;
+                            }
+                            if (desc.equals("$NULL$")) {
+                                desc = null;
+                            }
+                            ContactUser user = new ContactUser(uid, screenName, desc, intimacyScore);
+                            for (int j = 0; j < textNum; ++j) {
+                                String text = uTexts.get(j);
+                                String stringToConvert = String.valueOf(uCreatedAts.get(j));
+                                Long createdAt = Long.parseLong(stringToConvert);
+                                user.addTweet(text, phrase, createdAt);
+                            }
+                            contacts.add(user);
+                        }
+
                         // Sort contacts
                         PriorityQueue<ContactUser> sortedContacts = new PriorityQueue<>();
                         for (ContactUser cu : contacts) {

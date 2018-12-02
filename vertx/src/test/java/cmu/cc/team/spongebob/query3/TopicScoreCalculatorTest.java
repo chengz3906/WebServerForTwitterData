@@ -36,12 +36,9 @@ public class TopicScoreCalculatorTest {
 
 class MyResultSet implements TweetResultSetWrapper {
     private ArrayList<Tweet> tweets = new ArrayList<>(Arrays.asList(
-            new Tweet("cloud computing is awesome 233",
-                    "cloud computing is a*****e 233", 5l, Math.exp(7)-1),
-            new Tweet("please give me me m-o-r-e cloud'computing",
-                    "please give me me m-o-r-e cloud'computing", 2l, Math.exp(4)-1),
-            new Tweet("another tweet with impact score as 3",
-                    "another tweet with impact score as 3", 3l, Math.exp(7)-1)
+            new Tweet("cloud computing is awesome 233", 5l, Math.exp(7)-1),
+            new Tweet("please give me me m-o-r-e cloud'computing", 2l, Math.exp(4)-1),
+            new Tweet("another tweet with impact score as 3", 3l, Math.exp(7)-1)
             ));
     private int i = 0;
 

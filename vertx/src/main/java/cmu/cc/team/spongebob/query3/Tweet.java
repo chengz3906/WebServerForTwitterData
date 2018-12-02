@@ -16,8 +16,7 @@ public class Tweet implements Comparable<Tweet> {
     boolean chosen;
     static Pattern pat = Pattern.compile("[A-Za-z0-9]+");
 
-    public Tweet(String text, long tweetId,
-                 double impactScore) {
+    public Tweet(String text, long tweetId, double impactScore) {
         this.text = text;
         this.tweetId = tweetId;
         this.impactScore = impactScore;
@@ -52,4 +51,5 @@ public class Tweet implements Comparable<Tweet> {
         }
         return censored;
     }
+
 }

@@ -12,9 +12,15 @@ public class TweetTest {
     @Test
     void testCompare() {
         ArrayList<Tweet> tweets = new ArrayList<>(Arrays.asList(
+<<<<<<< HEAD
                 new Tweet("cloud computing is awesome 233",1l, 3),
                 new Tweet("please give me m-o-r-e cloud'computing",2l, 5),
                 new Tweet("another tweet with impact score as 3",3l, 3)
+=======
+                new Tweet("cloud computing is awesome 233", 1l, 3),
+                new Tweet("please give me m-o-r-e cloud'computing", 2l, 5),
+                new Tweet("another tweet with impact score as 3", 3l, 3)
+>>>>>>> master
         ));
         Collections.sort(tweets);
         assertEquals("please give me m-o-r-e cloud'computing", tweets.get(2).text);

@@ -145,11 +145,25 @@ public class TopicScoreCalculator {
                 resultBuilder.append(String.format("%s:%.2f\t",
                         censoredWord, word.score));
             }
+<<<<<<< HEAD
             resultBuilder.deleteCharAt(resultBuilder.length() - 1);
             resultBuilder.append("\n");
             for (Tweet t : reversedTweets) {
                 resultBuilder.append(String.format("%d\t%d\t%s\n",
                         (int)t.impactScore, t.tweetId, t.censorText(censorDict)));
+=======
+        }
+
+
+
+        resultBuilder.append("\n");
+        for (int i = 0; i < n2; ++i) {
+            Tweet t = filteredTweets.get(i);
+            resultBuilder.append(String.format("%d\t%d\t%s",
+                    (int)t.impactScore, t.tweetId, t.censorText(censorDict)));
+            if (i < n2 - 1) {
+                resultBuilder.append("\n");
+>>>>>>> master
             }
             resultBuilder.deleteCharAt(resultBuilder.length() - 1);
             context.response().end(header + resultBuilder.toString());

@@ -13,7 +13,6 @@ import io.vertx.ext.asyncsql.MySQLClient;
 import io.vertx.ext.sql.ResultSet;
 import io.vertx.ext.sql.SQLClient;
 import io.vertx.ext.sql.SQLConnection;
-import io.vertx.ext.sql.SQLRowStream;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 
@@ -287,11 +286,12 @@ public class MySQLVerticle extends AbstractVerticle {
                         .add(uidStart).add(uidEnd)
                         .add(timeStart).add(timeEnd);
 
-                connection.queryStreamWithParams(query3SQL, params, res -> {
+                connection.queryWithParams(query3SQL, params, res -> {
                     connection.close();
                     if (res.succeeded()) {
-                        SQLRowStream sqlRowStream = res.result();
-                        topicScoreCalculator.getTopicScore(sqlRowStream, n1, n2, context, header);
+                        ResultSet resultSet = res.result();
+                        String resp = topicScoreCalculator.getTopicScore(resultSet, n1, n2);
+                        context.response().end(header + resp);
                     } else {
                         LOGGER.error("Could not get query", res.cause());
                         context.fail(res.cause());

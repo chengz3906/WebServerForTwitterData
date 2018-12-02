@@ -1,5 +1,9 @@
 package cmu.cc.team.spongebob.query3;
 
+import io.vertx.core.json.JsonObject;
+import io.vertx.ext.sql.ResultSet;
+import io.vertx.ext.sql.SQLRowStream;
+import io.vertx.ext.web.RoutingContext;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.commons.lang3.tuple.MutablePair;
@@ -26,12 +30,12 @@ public class TopicScoreCalculator {
         @Override
         public int compareTo(TopicWord other) {
             if (this.score > other.score) {
-                return -1;
-            }
-            if (this.score < other.score) {
                 return 1;
             }
-            return this.word.compareTo(other.word);
+            if (this.score < other.score) {
+                return -1;
+            }
+            return other.word.compareTo(this.word);
         }
     }
 
@@ -66,91 +70,94 @@ public class TopicScoreCalculator {
         }
     }
 
-    public String getTopicScore(TweetResultSetWrapper rs, int n1, int n2) {
+    public void getTopicScore(SQLRowStream sqlRowStream, int n1, int n2, RoutingContext context, String header) {
         StringBuilder resultBuilder = new StringBuilder();
         HashMap<String, MutablePair<Double, HashSet<Long>>> wordsHashMap = new HashMap<>();
         HashMap<Long, Tweet> tweets = new HashMap<>();
-        ArrayList<Tweet> filteredTweets = new ArrayList<>();
-
+        PriorityQueue<Tweet> filteredTweets = new PriorityQueue<>();
+        ArrayList<Tweet> reversedTweets = new ArrayList<>();
+        PriorityQueue<TopicWord> topicWords = new PriorityQueue<>();
+        ArrayList<TopicWord> reversedWords = new ArrayList<>();
         // Extract words from tweets
-        int numTweets = 0;
-        for (Tweet tweet = rs.next(); tweet != null; tweet = rs.next()) {
-            String text = tweet.getText();
-            long tweetId = tweet.getTweetId();
-            double impactScore = tweet.getImpactScore();
-            tweets.put(tweetId, tweet);
+        sqlRowStream
+                .resultSetClosedHandler(v -> {
+                    sqlRowStream.moreResults();
+                })
+                .handler(row -> {
+                    long tweetId = row.getLong(0);
+                    String text = row.getString(1);
+                    double impactScore = row.getDouble(2);
+                    tweets.put(tweetId, new Tweet(text, tweetId, impactScore));
 
-            ArrayList<String> ws = extractWords(text);
-            int numWords = ws.size();
-            double logImpactScore = Math.log(impactScore + 1) / numWords;
-            for (String w : ws) {
-                w = w.toLowerCase();
+                    ArrayList<String> ws = extractWords(text);
+                    int numWords = ws.size();
+                    double logImpactScore = Math.log(impactScore + 1) / numWords;
+                    for (String w : ws) {
+                        w = w.toLowerCase();
 
-                if (!stopWords.contains(w)) {
-                    if (!wordsHashMap.containsKey(w)) {
-                        HashSet<Long> tweetIds = new HashSet<>();
-                        tweetIds.add(tweetId);
-                        MutablePair<Double, HashSet<Long>> counter = new MutablePair<>(logImpactScore, tweetIds);
-                        wordsHashMap.put(w, counter);
-                    } else {
-                        MutablePair<Double, HashSet<Long>> counter = wordsHashMap.get(w);
-                        counter.setLeft(counter.getLeft() + logImpactScore);
-                        counter.getRight().add(tweetId);
+                        if (!stopWords.contains(w)) {
+                            if (!wordsHashMap.containsKey(w)) {
+                                HashSet<Long> tweetIds = new HashSet<>();
+                                tweetIds.add(tweetId);
+                                MutablePair<Double, HashSet<Long>> counter = new MutablePair<>(logImpactScore, tweetIds);
+                                wordsHashMap.put(w, counter);
+                            } else {
+                                MutablePair<Double, HashSet<Long>> counter = wordsHashMap.get(w);
+                                counter.setLeft(counter.getLeft() + logImpactScore);
+                                counter.getRight().add(tweetId);
+                            }
+                        }
                     }
-                }
-            }
-            numTweets++;
-        }
+                })
+                .endHandler(v -> {
+                    int numTweets = tweets.size();
+                    for (Map.Entry<String, MutablePair<Double, HashSet<Long>>> kvPair: wordsHashMap.entrySet()) {
+                        double topicScore = Math.log((double) numTweets / kvPair.getValue().right.size()) * kvPair.getValue().left;
+                        topicWords.add(new TopicWord(kvPair.getKey(), topicScore));
+                        if (topicWords.size() > n1) {
+                            topicWords.poll();
+                        }
+                    }
+                    while (!topicWords.isEmpty()) {
+                        reversedWords.add(0, topicWords.poll());
+                    }
 
-        ArrayList<TopicWord> topicWords = new ArrayList<>();
-        for (Map.Entry<String, MutablePair<Double, HashSet<Long>>> kvPair: wordsHashMap.entrySet()) {
-            double topicScore = Math.log((double) numTweets / kvPair.getValue().right.size()) * kvPair.getValue().left;
-            topicWords.add(new TopicWord(kvPair.getKey(), topicScore));
-        }
-        Collections.sort(topicWords);
-
-        // Get n1 words and n2 tweets
-        n1 = Math.min(topicWords.size(), n1);
-        for (int i = 0; i < n1; ++i) {
-            HashSet<Long> tweetIds = wordsHashMap.get(topicWords.get(i).word).getRight();
-            for (Long id : tweetIds) {
-                tweets.get(id).chosen = true;
-            }
-        }
-        for (Tweet t : tweets.values()) {
-            if (t.chosen) {
-                filteredTweets.add(t);
-            }
-        }
-        Collections.sort(filteredTweets);
-        n2 = Math.min(filteredTweets.size(), n2);
-
-        // Form response string
-        for (int i = 0; i < n1; ++i) {
-            TopicWord word = topicWords.get(i);
-            String censoredWord = word.word;
-            if (censorDict.containsKey(censoredWord)) {
-                censoredWord = censorDict.get(censoredWord);
-            }
-            resultBuilder.append(String.format("%s:%.2f",
-                    censoredWord, word.score));
-            if (i < n1 - 1) {
-                resultBuilder.append("\t");
-            }
-        }
-
-
-
-        resultBuilder.append("\n");
-        for (int i = 0; i < n2; ++i) {
-            Tweet t = filteredTweets.get(i);
-            resultBuilder.append(String.format("%d\t%d\t%s",
-                    (int)t.impactScore, t.tweetId, t.censorText(censorDict)));
-            if (i < n2 - 1) {
-                resultBuilder.append("\n");
-            }
-        }
-        return resultBuilder.toString();
+                    // Get n1 words and n2 tweets
+                    for (TopicWord w : reversedWords) {
+                        HashSet<Long> tweetIds = wordsHashMap.get(w.word).getRight();
+                        for (Long id : tweetIds) {
+                            tweets.get(id).chosen = true;
+                        }
+                    }
+                    for (Tweet t : tweets.values()) {
+                        if (t.chosen) {
+                            filteredTweets.add(t);
+                            if (filteredTweets.size() > n2) {
+                                filteredTweets.poll();
+                            }
+                        }
+                    }
+                    while (!filteredTweets.isEmpty()) {
+                        reversedTweets.add(0, filteredTweets.poll());
+                    }
+                    // Form response string
+                    for (TopicWord word : reversedWords) {
+                        String censoredWord = word.word;
+                        if (censorDict.containsKey(censoredWord)) {
+                            censoredWord = censorDict.get(censoredWord);
+                        }
+                        resultBuilder.append(String.format("%s:%.2f\t",
+                                censoredWord, word.score));
+                    }
+                    resultBuilder.deleteCharAt(resultBuilder.length() - 1);
+                    resultBuilder.append("\n");
+                    for (Tweet t : reversedTweets) {
+                        resultBuilder.append(String.format("%d\t%d\t%s\n",
+                                (int)t.impactScore, t.tweetId, t.censorText(censorDict)));
+                    }
+                    resultBuilder.deleteCharAt(resultBuilder.length() - 1);
+                    context.response().end(header + resultBuilder.toString());
+                });
     }
 
     public ArrayList<String> extractWords(String text) {

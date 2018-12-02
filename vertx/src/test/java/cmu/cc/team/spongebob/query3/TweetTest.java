@@ -17,8 +17,8 @@ public class TweetTest {
                 new Tweet("another tweet with impact score as 3", 3l, 3)
         ));
         Collections.sort(tweets);
-        assertEquals("please give me m-o-r-e cloud'computing", tweets.get(0).text);
+        assertEquals("please give me m-o-r-e cloud'computing", tweets.get(2).text);
         assertEquals("another tweet with impact score as 3", tweets.get(1).text);
-        assertEquals("cloud computing is awesome 233", tweets.get(2).text);
+        assertEquals("cloud computing is awesome 233", tweets.get(0).text);
     }
 }

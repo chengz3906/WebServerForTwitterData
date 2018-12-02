@@ -2,7 +2,6 @@ package cmu.cc.team.spongebob.vertx;
 
 import cmu.cc.team.spongebob.qrcode.QRCodeParser;
 import cmu.cc.team.spongebob.query2.ContactUser;
-import cmu.cc.team.spongebob.query3.MySQLResultSetWrapper;
 import cmu.cc.team.spongebob.query3.TopicScoreCalculator;
 
 import io.vertx.core.AbstractVerticle;
@@ -11,7 +10,6 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.asyncsql.MySQLClient;
-import io.vertx.ext.sql.ResultSet;
 import io.vertx.ext.sql.SQLClient;
 import io.vertx.ext.sql.SQLConnection;
 import io.vertx.ext.sql.SQLRowStream;

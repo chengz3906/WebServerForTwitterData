@@ -10,6 +10,7 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.asyncsql.MySQLClient;
+import io.vertx.ext.sql.ResultSet;
 import io.vertx.ext.sql.SQLClient;
 import io.vertx.ext.sql.SQLConnection;
 import io.vertx.ext.sql.SQLRowStream;
@@ -234,6 +235,54 @@ public class MySQLVerticle extends AbstractVerticle {
                         context.fail(res.cause());
                     }
                 });
+                /*
+                connection.queryWithParams(query2SQL, params, res -> {
+                    connection.close();
+                    if (res.succeeded()) {
+                        ArrayList<ContactUser> contacts = new ArrayList<>();
+                        ResultSet rs = res.result();
+                        List<JsonObject> rows = rs.getRows();
+                        for (JsonObject row : rows) {
+                            Long uid = row.getLong("user_id");
+                            String text = row.getString("tweet_text");
+                            double intimacyScore = row.getDouble("intimacy_score");
+                            String screenName = row.getString("user_screen_name");
+                            String desc = row.getString("user_desc");
+                            Long createdAt = row.getLong("created_at");
+                            if (contacts.isEmpty() ||
+                                    !uid.equals(contacts.get(contacts.size() - 1).getUserId())) {
+                                contacts.add(new ContactUser(uid, screenName,
+                                        desc, intimacyScore));
+                            }
+                            contacts.get(contacts.size() - 1).addTweet(text, phrase, createdAt);
+                        }
+                        // Sort contacts
+                        PriorityQueue<ContactUser> sortedContacts = new PriorityQueue<>();
+                        for (ContactUser cu : contacts) {
+                            sortedContacts.add(cu);
+                            if (sortedContacts.size() > n) {
+                                sortedContacts.poll();
+                            }
+                        }
+                        ArrayList<ContactUser> reversedContacts = new ArrayList<>();
+                        while (!sortedContacts.isEmpty()) {
+                            reversedContacts.add(0, sortedContacts.poll());
+                        }
+                        StringBuilder respStringBuilder = new StringBuilder();
+                        for (ContactUser contactUser : reversedContacts) {
+                            respStringBuilder.append(String.format("%s\t%s\t%s\n",
+                                    contactUser.getUserName(),
+                                    contactUser.getUserDescription(),
+                                    contactUser.getTweetText()));
+                        }
+                        respStringBuilder.deleteCharAt(respStringBuilder.length() - 1);
+                        context.response().end(header + respStringBuilder);
+                    } else {
+                        LOGGER.error("Could not get query", res.cause());
+                        context.fail(res.cause());
+                    }
+                });
+                */
             } else {
                 LOGGER.error("Could not connect to MySQL DB", car.cause());
                 context.fail(car.cause());

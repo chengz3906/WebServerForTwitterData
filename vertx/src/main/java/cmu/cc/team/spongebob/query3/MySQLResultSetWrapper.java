@@ -2,6 +2,7 @@ package cmu.cc.team.spongebob.query3;
 
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.sql.ResultSet;
+import io.vertx.ext.sql.SQLRowStream;
 
 import java.util.List;
 

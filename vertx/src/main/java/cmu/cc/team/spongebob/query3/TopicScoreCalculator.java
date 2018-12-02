@@ -1,5 +1,6 @@
 package cmu.cc.team.spongebob.query3;
 
+import io.vertx.ext.sql.SQLRowStream;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.commons.lang3.tuple.MutablePair;
@@ -66,42 +67,46 @@ public class TopicScoreCalculator {
         }
     }
 
-    public String getTopicScore(TweetResultSetWrapper rs, int n1, int n2) {
+    public String getTopicScore(SQLRowStream sqlRowStream, int n1, int n2) {
         StringBuilder resultBuilder = new StringBuilder();
         HashMap<String, MutablePair<Double, HashSet<Long>>> wordsHashMap = new HashMap<>();
         HashMap<Long, Tweet> tweets = new HashMap<>();
         ArrayList<Tweet> filteredTweets = new ArrayList<>();
-
         // Extract words from tweets
-        int numTweets = 0;
-        for (Tweet tweet = rs.next(); tweet != null; tweet = rs.next()) {
-            String text = tweet.getText();
-            long tweetId = tweet.getTweetId();
-            double impactScore = tweet.getImpactScore();
-            tweets.put(tweetId, tweet);
+        sqlRowStream
+                .resultSetClosedHandler(v -> {
+                    sqlRowStream.moreResults();
+                })
+                .handler(row -> {
+                    long tweetId = row.getLong(0);
+                    String text = row.getString(1);
+                    String censoredText = row.getString(2);
+                    double impactScore = row.getDouble(3);
+                    tweets.put(tweetId, new Tweet(text, censoredText, tweetId, impactScore));
 
-            ArrayList<String> ws = extractWords(text);
-            int numWords = ws.size();
-            double logImpactScore = Math.log(impactScore + 1) / numWords;
-            for (String w : ws) {
-                w = w.toLowerCase();
+                    ArrayList<String> ws = extractWords(text);
+                    int numWords = ws.size();
+                    double logImpactScore = Math.log(impactScore + 1) / numWords;
+                    for (String w : ws) {
+                        w = w.toLowerCase();
 
-                if (!stopWords.contains(w)) {
-                    if (!wordsHashMap.containsKey(w)) {
-                        HashSet<Long> tweetIds = new HashSet<>();
-                        tweetIds.add(tweetId);
-                        MutablePair<Double, HashSet<Long>> counter = new MutablePair<>(logImpactScore, tweetIds);
-                        wordsHashMap.put(w, counter);
-                    } else {
-                        MutablePair<Double, HashSet<Long>> counter = wordsHashMap.get(w);
-                        counter.setLeft(counter.getLeft() + logImpactScore);
-                        counter.getRight().add(tweetId);
+                        if (!stopWords.contains(w)) {
+                            if (!wordsHashMap.containsKey(w)) {
+                                HashSet<Long> tweetIds = new HashSet<>();
+                                tweetIds.add(tweetId);
+                                MutablePair<Double, HashSet<Long>> counter = new MutablePair<>(logImpactScore, tweetIds);
+                                wordsHashMap.put(w, counter);
+                            } else {
+                                MutablePair<Double, HashSet<Long>> counter = wordsHashMap.get(w);
+                                counter.setLeft(counter.getLeft() + logImpactScore);
+                                counter.getRight().add(tweetId);
+                            }
+                        }
                     }
-                }
-            }
-            numTweets++;
-        }
+                })
+                .endHandler(v -> {});
 
+        int numTweets = tweets.size();
         ArrayList<TopicWord> topicWords = new ArrayList<>();
         for (Map.Entry<String, MutablePair<Double, HashSet<Long>>> kvPair: wordsHashMap.entrySet()) {
             double topicScore = Math.log((double) numTweets / kvPair.getValue().right.size()) * kvPair.getValue().left;

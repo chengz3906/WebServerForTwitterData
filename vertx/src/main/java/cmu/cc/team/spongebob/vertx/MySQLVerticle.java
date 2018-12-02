@@ -14,6 +14,7 @@ import io.vertx.ext.asyncsql.MySQLClient;
 import io.vertx.ext.sql.ResultSet;
 import io.vertx.ext.sql.SQLClient;
 import io.vertx.ext.sql.SQLConnection;
+import io.vertx.ext.sql.SQLRowStream;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 
@@ -187,28 +188,30 @@ public class MySQLVerticle extends AbstractVerticle {
 
                 final JsonArray params = new JsonArray().add(userId).add(userId);
 
-                connection.queryWithParams(query2SQL, params, res -> {
+                connection.queryStreamWithParams(query2SQL, params, res -> {
                     connection.close();
                     if (res.succeeded()) {
                         ArrayList<ContactUser> contacts = new ArrayList<>();
-                        Long lastUid = null;
-                        ResultSet resultSet = res.result();
-                        List<JsonObject> rows = resultSet.getRows();
-
-                        for (JsonObject row: rows) {
-                            Long uid = row.getLong("user_id");
-                            String text = row.getString("tweet_text");
-                            double intimacyScore = row.getDouble("intimacy_score");
-                            String screenName = row.getString("user_screen_name");
-                            String desc = row.getString("user_desc");
-                            Long createdAt = row.getLong("created_at");
-                            if (!uid.equals(lastUid)) {
-                                contacts.add(new ContactUser(uid, screenName,
-                                        desc, intimacyScore));
-                                lastUid = uid;
-                            }
-                            contacts.get(contacts.size() - 1).addTweet(text, phrase, createdAt);
-                        }
+                        SQLRowStream sqlRowStream = res.result();
+                        sqlRowStream
+                                .resultSetClosedHandler(v -> {
+                                    sqlRowStream.moreResults();
+                                })
+                                .handler(row -> {
+                                    Long uid = row.getLong(0);
+                                    String text = row.getString(1);
+                                    double intimacyScore = row.getDouble(2);
+                                    String screenName = row.getString(3);
+                                    String desc = row.getString(4);
+                                    Long createdAt = row.getLong(5);
+                                    if (contacts.isEmpty() ||
+                                            !uid.equals(contacts.get(contacts.size() - 1).getUserId())) {
+                                        contacts.add(new ContactUser(uid, screenName,
+                                                desc, intimacyScore));
+                                    }
+                                    contacts.get(contacts.size() - 1).addTweet(text, phrase, createdAt);
+                                })
+                                .endHandler(v -> {});
 
                         Collections.sort(contacts);
                         StringBuilder respStringBuilder = new StringBuilder();
@@ -269,12 +272,11 @@ public class MySQLVerticle extends AbstractVerticle {
                         .add(uidStart).add(uidEnd)
                         .add(timeStart).add(timeEnd);
 
-                connection.queryWithParams(query3SQL, params, res -> {
+                connection.queryStreamWithParams(query3SQL, params, res -> {
                     connection.close();
                     if (res.succeeded()) {
-                        ResultSet resultSet = res.result();
-                        MySQLResultSetWrapper rsWrapper = new MySQLResultSetWrapper(resultSet);
-                        String resp = topicScoreCalculator.getTopicScore(rsWrapper, n1, n2);
+                        SQLRowStream sqlRowStream = res.result();
+                        String resp = topicScoreCalculator.getTopicScore(sqlRowStream, n1, n2);
                         context.response().end(header + resp);
                     } else {
                         LOGGER.error("Could not get query", res.cause());

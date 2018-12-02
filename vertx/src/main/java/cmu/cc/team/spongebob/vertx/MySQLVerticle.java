@@ -51,7 +51,7 @@ public class MySQLVerticle extends AbstractVerticle {
      */
     private static final String DB_USER = System.getenv("MYSQL_USER");
     private static final String DB_PWD = System.getenv("MYSQL_PWD");
-    private final int MAX_POOL_SIZE = 500;
+    private static final int MAX_POOL_SIZE = Integer.parseInt(System.getenv("MYSQL_POOL_SIZE"));
 
     private SQLClient mySQLClient;
 

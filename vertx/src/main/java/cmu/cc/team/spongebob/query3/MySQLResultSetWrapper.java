@@ -25,10 +25,9 @@ public class MySQLResultSetWrapper implements TweetResultSetWrapper {
         JsonObject row = rows.get(index);
         long tweetId = row.getLong("tweet_id");
         String text = row.getString("text");
-        String censoredText = row.getString("censored_text");
         double impactScore = row.getLong("impact_score");
         index++;
-        return new Tweet(text, censoredText, tweetId, impactScore);
+        return new Tweet(text, tweetId, impactScore);
     }
 
     @Override

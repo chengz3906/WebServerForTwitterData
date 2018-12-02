@@ -69,7 +69,7 @@ public class TopicScoreCalculator {
             }
         }
     }
-    
+
     public void getTopicScore(SQLRowStream sqlRowStream, int n1, int n2, RoutingContext context, String header) {
         StringBuilder resultBuilder = new StringBuilder();
         HashMap<String, MutablePair<Double, HashSet<Long>>> wordsHashMap = new HashMap<>();

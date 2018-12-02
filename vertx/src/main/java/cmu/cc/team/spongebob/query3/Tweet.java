@@ -26,15 +26,15 @@ public class Tweet implements Comparable<Tweet> {
     @Override
     public int compareTo(Tweet other) {
         if (this.impactScore > other.impactScore) {
-            return 1;
-        }
-        if (this.impactScore < other.impactScore) {
             return -1;
         }
-        if (this.tweetId > other.tweetId) {
+        if (this.impactScore < other.impactScore) {
             return 1;
         }
-        return -1;
+        if (this.tweetId > other.tweetId) {
+            return -1;
+        }
+        return 1;
     }
 
     public String censorText(HashMap<String, String> censoredWords) {

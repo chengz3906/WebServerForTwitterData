@@ -206,29 +206,29 @@ public class MySQLVerticle extends AbstractVerticle {
                                     }
                                     contacts.get(contacts.size() - 1).addTweet(text, phrase, createdAt);
                                 })
-                                .endHandler(v -> {});
-
-                        // Sort contacts
-                        PriorityQueue<ContactUser> sortedContacts = new PriorityQueue<>();
-                        for (ContactUser cu : contacts) {
-                            sortedContacts.add(cu);
-                            if (sortedContacts.size() > n) {
-                                sortedContacts.poll();
-                            }
-                        }
-                        ArrayList<ContactUser> reversedContacts = new ArrayList<>();
-                        while (!sortedContacts.isEmpty()) {
-                            reversedContacts.add(0, sortedContacts.poll());
-                        }
-                        StringBuilder respStringBuilder = new StringBuilder();
-                        for (ContactUser contactUser : reversedContacts) {
-                            respStringBuilder.append(String.format("%s\t%s\t%s\n",
-                                    contactUser.getUserName(),
-                                    contactUser.getUserDescription(),
-                                    contactUser.getTweetText()));
-                        }
-                        respStringBuilder.deleteCharAt(respStringBuilder.length() - 1);
-                        context.response().end(header + respStringBuilder);
+                                .endHandler(v -> {
+                                    // Sort contacts
+                                    PriorityQueue<ContactUser> sortedContacts = new PriorityQueue<>();
+                                    for (ContactUser cu : contacts) {
+                                        sortedContacts.add(cu);
+                                        if (sortedContacts.size() > n) {
+                                            sortedContacts.poll();
+                                        }
+                                    }
+                                    ArrayList<ContactUser> reversedContacts = new ArrayList<>();
+                                    while (!sortedContacts.isEmpty()) {
+                                        reversedContacts.add(0, sortedContacts.poll());
+                                    }
+                                    StringBuilder respStringBuilder = new StringBuilder();
+                                    for (ContactUser contactUser : reversedContacts) {
+                                        respStringBuilder.append(String.format("%s\t%s\t%s\n",
+                                                contactUser.getUserName(),
+                                                contactUser.getUserDescription(),
+                                                contactUser.getTweetText()));
+                                    }
+                                    respStringBuilder.deleteCharAt(respStringBuilder.length() - 1);
+                                    context.response().end(header + respStringBuilder);
+                                });
                     } else {
                         LOGGER.error("Could not get query", res.cause());
                         context.fail(res.cause());
@@ -276,8 +276,7 @@ public class MySQLVerticle extends AbstractVerticle {
                     connection.close();
                     if (res.succeeded()) {
                         SQLRowStream sqlRowStream = res.result();
-                        String resp = topicScoreCalculator.getTopicScore(sqlRowStream, n1, n2);
-                        context.response().end(header + resp);
+                        topicScoreCalculator.getTopicScore(sqlRowStream, n1, n2, context, header);
                     } else {
                         LOGGER.error("Could not get query", res.cause());
                         context.fail(res.cause());

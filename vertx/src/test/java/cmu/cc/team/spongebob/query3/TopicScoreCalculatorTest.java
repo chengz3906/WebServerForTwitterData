@@ -33,7 +33,7 @@ public class TopicScoreCalculatorTest {
 //                +"19\t1\tcloud computing is a*****e 233", res);
     }
 }
-
+/*
 class MyResultSet implements TweetResultSetWrapper {
     private ArrayList<Tweet> tweets = new ArrayList<>(Arrays.asList(
             new Tweet("cloud computing is awesome 233",
@@ -56,3 +56,4 @@ class MyResultSet implements TweetResultSetWrapper {
     @Override
     public void close() {return;}
 }
+*/

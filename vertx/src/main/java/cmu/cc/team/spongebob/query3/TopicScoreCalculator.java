@@ -27,12 +27,12 @@ public class TopicScoreCalculator {
         @Override
         public int compareTo(TopicWord other) {
             if (this.score > other.score) {
-                return -1;
-            }
-            if (this.score < other.score) {
                 return 1;
             }
-            return this.word.compareTo(other.word);
+            if (this.score < other.score) {
+                return -1;
+            }
+            return other.word.compareTo(this.word);
         }
     }
 
@@ -71,7 +71,10 @@ public class TopicScoreCalculator {
         StringBuilder resultBuilder = new StringBuilder();
         HashMap<String, MutablePair<Double, HashSet<Long>>> wordsHashMap = new HashMap<>();
         HashMap<Long, Tweet> tweets = new HashMap<>();
-        ArrayList<Tweet> filteredTweets = new ArrayList<>();
+        PriorityQueue<Tweet> filteredTweets = new PriorityQueue<>();
+        ArrayList<Tweet> reversedTweets = new ArrayList<>();
+        PriorityQueue<TopicWord> topicWords = new PriorityQueue<>();
+        ArrayList<TopicWord> reversedWords = new ArrayList<>();
         // Extract words from tweets
         sqlRowStream
                 .resultSetClosedHandler(v -> {
@@ -107,17 +110,20 @@ public class TopicScoreCalculator {
                 .endHandler(v -> {});
 
         int numTweets = tweets.size();
-        ArrayList<TopicWord> topicWords = new ArrayList<>();
         for (Map.Entry<String, MutablePair<Double, HashSet<Long>>> kvPair: wordsHashMap.entrySet()) {
             double topicScore = Math.log((double) numTweets / kvPair.getValue().right.size()) * kvPair.getValue().left;
             topicWords.add(new TopicWord(kvPair.getKey(), topicScore));
+            if (topicWords.size() > n1) {
+                topicWords.poll();
+            }
         }
-        Collections.sort(topicWords);
+        while (!topicWords.isEmpty()) {
+            reversedWords.add(0, topicWords.poll());
+        }
 
         // Get n1 words and n2 tweets
-        n1 = Math.min(topicWords.size(), n1);
-        for (int i = 0; i < n1; ++i) {
-            HashSet<Long> tweetIds = wordsHashMap.get(topicWords.get(i).word).getRight();
+        for (TopicWord w : reversedWords) {
+            HashSet<Long> tweetIds = wordsHashMap.get(w.word).getRight();
             for (Long id : tweetIds) {
                 tweets.get(id).chosen = true;
             }
@@ -125,33 +131,30 @@ public class TopicScoreCalculator {
         for (Tweet t : tweets.values()) {
             if (t.chosen) {
                 filteredTweets.add(t);
+                if (filteredTweets.size() > n2) {
+                    filteredTweets.poll();
+                }
             }
         }
-        Collections.sort(filteredTweets);
-        n2 = Math.min(filteredTweets.size(), n2);
-
+        while (!filteredTweets.isEmpty()) {
+            reversedTweets.add(0, filteredTweets.poll());
+        }
         // Form response string
-        for (int i = 0; i < n1; ++i) {
-            TopicWord word = topicWords.get(i);
+        for (TopicWord word : reversedWords) {
             String censoredWord = word.word;
             if (censorDict.containsKey(censoredWord)) {
                 censoredWord = censorDict.get(censoredWord);
             }
-            resultBuilder.append(String.format("%s:%.2f",
+            resultBuilder.append(String.format("%s:%.2f\t",
                     censoredWord, word.score));
-            if (i < n1 - 1) {
-                resultBuilder.append("\t");
-            }
         }
+        resultBuilder.deleteCharAt(resultBuilder.length() - 1);
         resultBuilder.append("\n");
-        for (int i = 0; i < n2; ++i) {
-            Tweet t = filteredTweets.get(i);
-            resultBuilder.append(String.format("%d\t%d\t%s",
+        for (Tweet t : reversedTweets) {
+            resultBuilder.append(String.format("%d\t%d\t%s\n",
                     (int)t.impactScore, t.tweetId, t.censoredText));
-            if (i < n2 - 1) {
-                resultBuilder.append("\n");
-            }
         }
+        resultBuilder.deleteCharAt(resultBuilder.length() - 1);
         return resultBuilder.toString();
     }
 

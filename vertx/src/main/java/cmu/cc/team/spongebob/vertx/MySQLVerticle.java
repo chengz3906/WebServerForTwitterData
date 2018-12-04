@@ -198,7 +198,7 @@ public class MySQLVerticle extends AbstractVerticle {
                 connection.queryWithParams(query2SQL, params, res -> {
                     connection.close();
                     if (res.succeeded()) {
-                        ArrayList<ContactUser> contacts = new ArrayList<>();
+                        PriorityQueue<ContactUser> sortedContacts = new PriorityQueue<>();
                         ResultSet resultSet = res.result();
                         JsonObject row = resultSet.getRows().get(0);
 
@@ -231,17 +231,12 @@ public class MySQLVerticle extends AbstractVerticle {
                                 Long createdAt = Long.parseLong(stringToConvert);
                                 user.addTweet(text, phrase, createdAt);
                             }
-                            contacts.add(user);
-                        }
-
-                        // Sort contacts
-                        PriorityQueue<ContactUser> sortedContacts = new PriorityQueue<>();
-                        for (ContactUser cu : contacts) {
-                            sortedContacts.add(cu);
+                            sortedContacts.add(user);
                             if (sortedContacts.size() > n) {
                                 sortedContacts.poll();
                             }
                         }
+
                         ArrayList<ContactUser> reversedContacts = new ArrayList<>();
                         while (!sortedContacts.isEmpty()) {
                             reversedContacts.add(0, sortedContacts.poll());

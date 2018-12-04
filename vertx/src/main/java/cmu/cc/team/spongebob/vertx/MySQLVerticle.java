@@ -189,6 +189,11 @@ public class MySQLVerticle extends AbstractVerticle {
             return;
         }
 
+        if (n <= 0) {
+            context.response().end(header);
+            return;
+        }
+
         mySQLClient.getConnection(car -> {
             if (car.succeeded()) {
                 SQLConnection connection = car.result();
@@ -294,6 +299,11 @@ public class MySQLVerticle extends AbstractVerticle {
             n1 = Integer.parseInt(n1Str);
             n2 = Integer.parseInt(n2Str);
         } catch (NumberFormatException e) {
+            context.response().end(header);
+            return;
+        }
+
+        if (n1 <= 0 || n2 < 0) {
             context.response().end(header);
             return;
         }

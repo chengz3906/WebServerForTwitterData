@@ -146,7 +146,9 @@ public class TopicScoreCalculator {
                 resultBuilder.append("\t");
             }
         }
-        resultBuilder.append("\n");
+        if (n1 > 0) {
+            resultBuilder.append("\n");
+        }
         for (int i = 0; i < n2; ++i) {
             Tweet t = filteredTweets.get(i);
             resultBuilder.append(String.format("%d\t%d\t%s",

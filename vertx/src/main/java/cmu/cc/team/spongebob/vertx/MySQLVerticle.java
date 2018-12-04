@@ -205,6 +205,12 @@ public class MySQLVerticle extends AbstractVerticle {
                     if (res.succeeded()) {
                         PriorityQueue<ContactUser> sortedContacts = new PriorityQueue<>();
                         ResultSet resultSet = res.result();
+
+                        if (resultSet.getNumRows() == 0) {
+                            context.response().end(header);
+                            return;
+                        }
+
                         JsonObject row = resultSet.getRows().get(0);
 
                         JsonArray uids = new JsonArray(row.getString("user2_ids"));

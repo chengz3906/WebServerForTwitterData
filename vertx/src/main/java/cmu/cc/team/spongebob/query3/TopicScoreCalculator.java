@@ -7,7 +7,13 @@ import lombok.Data;
 import org.apache.commons.lang3.tuple.MutablePair;
 
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -162,5 +168,4 @@ public class TopicScoreCalculator {
         }
         return ws;
     }
-
 }

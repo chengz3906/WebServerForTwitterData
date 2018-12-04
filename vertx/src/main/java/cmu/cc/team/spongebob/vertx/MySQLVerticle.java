@@ -18,7 +18,10 @@ import io.vertx.ext.web.RoutingContext;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.PriorityQueue;
+import java.util.Scanner;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -280,7 +283,6 @@ public class MySQLVerticle extends AbstractVerticle {
             context.response().end(header);
             return;
         }
-
 
         final long uidStart;
         final long uidEnd;

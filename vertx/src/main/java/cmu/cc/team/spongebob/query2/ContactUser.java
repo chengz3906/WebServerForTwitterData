@@ -1,9 +1,7 @@
 package cmu.cc.team.spongebob.query2;
 
-
 import lombok.Getter;
 
-import java.util.PriorityQueue;
 
 public class ContactUser implements Comparable<ContactUser> {
     private @Getter Long userId;

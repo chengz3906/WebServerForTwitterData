@@ -308,6 +308,11 @@ public class MySQLVerticle extends AbstractVerticle {
             return;
         }
 
+        if (uidStart > uidEnd || timeStart > timeEnd) {
+            context.response().end(header);
+            return;
+        }
+
         mySQLClient.getConnection(car -> {
             if (car.succeeded()) {
                 SQLConnection connection = car.result();

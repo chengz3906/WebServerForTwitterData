@@ -1,17 +1,12 @@
 package cmu.cc.team.spongebob.query3;
 
-import io.vertx.core.json.Json;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.sql.ResultSet;
-import io.vertx.ext.sql.SQLRowStream;
-import io.vertx.ext.web.RoutingContext;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.commons.lang3.tuple.MutablePair;
 
-import java.io.*;
-import java.lang.Math;
+import java.io.InputStream;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -145,7 +140,6 @@ public class TopicScoreCalculator {
                 resultBuilder.append("\t");
             }
         }
-
         resultBuilder.append("\n");
         for (int i = 0; i < n2; ++i) {
             Tweet t = filteredTweets.get(i);

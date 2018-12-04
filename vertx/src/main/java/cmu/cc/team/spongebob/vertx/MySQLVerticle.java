@@ -47,7 +47,7 @@ public class MySQLVerticle extends AbstractVerticle {
      */
     private static final String DB_USER = System.getenv("MYSQL_USER");
     private static final String DB_PWD = System.getenv("MYSQL_PWD");
-    private final int MAX_POOL_SIZE = 500;
+    private static final int MAX_POOL_SIZE = Integer.parseInt(System.getenv("MYSQL_POOL_SIZE"));
 
     private SQLClient mySQLClient;
 
@@ -174,12 +174,21 @@ public class MySQLVerticle extends AbstractVerticle {
             context.response().end(header);
             return;
         }
+
+        long userId;
+        int n;
+
+        try {
+            userId = Long.parseLong(userIdStr);
+            n = Integer.parseInt(nStr);
+        } catch (NumberFormatException e) {
+            context.response().end(header);
+            return;
+        }
+
         mySQLClient.getConnection(car -> {
             if (car.succeeded()) {
                 SQLConnection connection = car.result();
-
-                final Long userId = Long.parseLong(userIdStr);
-                final int n = Integer.parseInt(nStr);
 
                 final JsonArray params = new JsonArray().add(userId);
 
@@ -271,16 +280,30 @@ public class MySQLVerticle extends AbstractVerticle {
             context.response().end(header);
             return;
         }
+
+
+        final long uidStart;
+        final long uidEnd;
+        final long timeStart;
+        final long timeEnd;
+        final int n1;
+        final int n2;
+
+        try {
+            uidStart = Long.parseLong(uidStartStr);
+            uidEnd = Long.parseLong(uidEndStr);
+            timeStart = Long.parseLong(timeStartStr);
+            timeEnd = Long.parseLong(timeEndStr);
+            n1 = Integer.parseInt(n1Str);
+            n2 = Integer.parseInt(n2Str);
+        } catch (NumberFormatException e) {
+            context.response().end(header);
+            return;
+        }
+
         mySQLClient.getConnection(car -> {
             if (car.succeeded()) {
                 SQLConnection connection = car.result();
-
-                final Long uidStart = Long.parseLong(uidStartStr);
-                final Long uidEnd = Long.parseLong(uidEndStr);
-                final Long timeStart = Long.parseLong(timeStartStr);
-                final Long timeEnd = Long.parseLong(timeEndStr);
-                final int n1 = Integer.parseInt(n1Str);
-                final int n2 = Integer.parseInt(n2Str);
 
                 final JsonArray params = new JsonArray()
                         .add(uidStart).add(uidEnd)

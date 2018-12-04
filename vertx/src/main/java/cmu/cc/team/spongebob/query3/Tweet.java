@@ -51,5 +51,4 @@ public class Tweet implements Comparable<Tweet> {
         }
         return censored;
     }
-
 }

@@ -82,6 +82,11 @@ public class TopicScoreCalculator {
         // Extract words from tweets
         int numTweets = 0;
         List<JsonObject> rows = rs.getRows();
+
+        if (rows.size() == 0) {
+            return "";
+        }
+
         for (JsonObject row : rows) {
             String text = row.getString("text");
             long tweetId = row.getLong("tweet_id");

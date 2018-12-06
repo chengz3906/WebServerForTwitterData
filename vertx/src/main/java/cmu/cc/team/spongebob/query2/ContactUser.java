@@ -1,15 +1,13 @@
-package cmu.cc.team.spongebob.query2.database;
-
+package cmu.cc.team.spongebob.query2;
 
 import lombok.Getter;
 
-import java.util.PriorityQueue;
 
 public class ContactUser implements Comparable<ContactUser> {
     private @Getter Long userId;
     private @Getter String userName;
     private @Getter String userDescription;
-    private PriorityQueue<ContactTweet> tweets;
+    private ContactTweet chosenTweet;
     private int phraseScore;
     private double intimacyScore;
     private double score;
@@ -23,18 +21,20 @@ public class ContactUser implements Comparable<ContactUser> {
         this.phraseScore = 0;
         this.intimacyScore = intimacyScore;
         this.score = -1;
-        this.tweets = new PriorityQueue<>();
+        this.chosenTweet = null;
     }
 
-    public void addTweet(String text, String phrase, String createdAt) {
+    public void addTweet(String text, String phrase, Long createdAt) {
         ContactTweet tweet = new ContactTweet(text, phrase, createdAt);
         int phraseCount = tweet.getPhraseCount();
         this.phraseScore += phraseCount;
-        this.tweets.add(tweet);
+        if (this.chosenTweet == null || tweet.compareTo(this.chosenTweet) < 0) {
+            this.chosenTweet = tweet;
+        }
     }
 
     public String getTweetText() {
-        return tweets.peek().getText();
+        return this.chosenTweet.getText();
     }
 
     public double getScore() {
@@ -47,13 +47,13 @@ public class ContactUser implements Comparable<ContactUser> {
     @Override
     public int compareTo(ContactUser other) {
         if (this.getScore() > other.getScore()) {
-            return -1;
+            return 1;
         } else if (this.getScore() < other.getScore()) {
-            return 1;
-        } else if (this.userId < other.getUserId()) {
             return -1;
-        } else if (this.userId > other.getUserId()) {
+        } else if (this.userId < other.getUserId()) {
             return 1;
+        } else if (this.userId > other.getUserId()) {
+            return -1;
         } else return 0;
     }
 }

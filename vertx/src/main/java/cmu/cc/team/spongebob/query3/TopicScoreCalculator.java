@@ -1,13 +1,19 @@
-package cmu.cc.team.spongebob.query3.database;
+package cmu.cc.team.spongebob.query3;
 
+import io.vertx.core.json.JsonObject;
+import io.vertx.ext.sql.ResultSet;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.commons.lang3.tuple.MutablePair;
-import org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
 
-import java.io.*;
-import java.lang.Math;
-import java.util.*;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -67,7 +73,7 @@ public class TopicScoreCalculator {
         }
     }
 
-    public String getTopicScore(TweetResultSetWrapper rs, int n1, int n2) {
+    public String getTopicScore(ResultSet rs, int n1, int n2) {
         StringBuilder resultBuilder = new StringBuilder();
         HashMap<String, MutablePair<Double, HashSet<Long>>> wordsHashMap = new HashMap<>();
         HashMap<Long, Tweet> tweets = new HashMap<>();
@@ -75,11 +81,17 @@ public class TopicScoreCalculator {
 
         // Extract words from tweets
         int numTweets = 0;
-        for (Tweet tweet = rs.next(); tweet != null; tweet = rs.next()) {
-            String text = tweet.getText();
-            long tweetId = tweet.getTweetId();
-            double impactScore = tweet.getImpactScore();
-            tweets.put(tweetId, tweet);
+        List<JsonObject> rows = rs.getRows();
+
+        if (rows.size() == 0) {
+            return "";
+        }
+
+        for (JsonObject row : rows) {
+            String text = row.getString("text");
+            long tweetId = row.getLong("tweet_id");
+            double impactScore = row.getDouble("impact_score");
+            tweets.put(tweetId, new Tweet(text, tweetId, impactScore));
 
             ArrayList<String> ws = extractWords(text);
             int numWords = ws.size();
@@ -143,7 +155,7 @@ public class TopicScoreCalculator {
         for (int i = 0; i < n2; ++i) {
             Tweet t = filteredTweets.get(i);
             resultBuilder.append(String.format("%d\t%d\t%s",
-                    (int)t.impactScore, t.tweetId, t.censoredText));
+                    (int)t.impactScore, t.tweetId, t.censorText(censorDict)));
             if (i < n2 - 1) {
                 resultBuilder.append("\n");
             }
@@ -161,5 +173,4 @@ public class TopicScoreCalculator {
         }
         return ws;
     }
-
 }

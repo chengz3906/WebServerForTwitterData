@@ -1,11 +1,15 @@
 package cmu.cc.team.spongebob.qrcode;
 
 import cmu.cc.team.spongebob.qrcode.utils.BigEndianBitSet;
-import cmu.cc.team.spongebob.qrcode.utils.BitSquare;
+
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.ListIterator;
+import java.util.Scanner;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -479,5 +483,4 @@ public class QRCodeParser {
         return (byte) ((b & 1) ^ ((b >> 1) & 1) ^ ((b >> 2) & 1) ^ ((b >> 3) & 1)
                 ^ ((b >> 4) & 1) ^ ((b >> 5) & 1) ^ ((b >> 6) & 1) ^ ((b >> 7) & 1));
     }
-
 }

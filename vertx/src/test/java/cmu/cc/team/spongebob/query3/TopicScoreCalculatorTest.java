@@ -1,4 +1,4 @@
-package cmu.cc.team.spongebob.query3.database;
+package cmu.cc.team.spongebob.query3;
 
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -26,33 +26,11 @@ public class TopicScoreCalculatorTest {
 
     @Test
     void testTopicScore() {
-        MyResultSet rs = new MyResultSet();
-        String res = calculator.getTopicScore(rs, 30, 2);
+//        MyResultSet rs = new MyResultSet();
+//        String res = calculator.getTopicScore(rs, 30, 2);
 //        assertEquals("me:1.46\tawesome:0.81\tcloud:0.81\n"
 //                +"53\t2\tplease give me me m-o-r-e cloud'computing\n"
 //                +"19\t1\tcloud computing is a*****e 233", res);
     }
 }
 
-class MyResultSet implements TweetResultSetWrapper {
-    private ArrayList<Tweet> tweets = new ArrayList<>(Arrays.asList(
-            new Tweet("cloud computing is awesome 233",
-                    "cloud computing is a*****e 233", 5l, Math.exp(7)-1),
-            new Tweet("please give me me m-o-r-e cloud'computing",
-                    "please give me me m-o-r-e cloud'computing", 2l, Math.exp(4)-1),
-            new Tweet("another tweet with impact score as 3",
-                    "another tweet with impact score as 3", 3l, Math.exp(7)-1)
-            ));
-    private int i = 0;
-
-    @Override
-    public Tweet next() {
-        if (i >= 3) {
-            return null;
-        }
-        return tweets.get(i++);
-    }
-
-    @Override
-    public void close() {return;}
-}

@@ -1,4 +1,4 @@
-package cmu.cc.team.spongebob.query2.database;
+package cmu.cc.team.spongebob.query2;
 
 
 import lombok.Getter;
@@ -9,9 +9,9 @@ import java.util.regex.Matcher;
 public class ContactTweet implements Comparable<ContactTweet> {
     private @Getter String text;
     private @Getter int phraseCount;
-    private @Getter String createdAt;
+    private @Getter Long createdAt;
 
-    public ContactTweet(String text, String phrase, String createdAt) {
+    public ContactTweet(String text, String phrase, Long createdAt) {
         this.text = text;
         this.createdAt = createdAt;
         countPhrase(phrase);
@@ -19,10 +19,10 @@ public class ContactTweet implements Comparable<ContactTweet> {
 
     @Override
     public int compareTo(ContactTweet other) {
-        if (this.phraseCount != other.getPhraseCount()) {
-            return other.getPhraseCount() - this.phraseCount;
+        if (this.phraseCount != other.phraseCount) {
+            return other.phraseCount - this.phraseCount;
         } else {
-            return other.getCreatedAt().compareTo(this.createdAt);
+            return other.createdAt.compareTo(this.createdAt);
         }
     }
 

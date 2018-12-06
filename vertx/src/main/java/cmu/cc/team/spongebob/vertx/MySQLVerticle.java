@@ -13,13 +13,15 @@ import io.vertx.ext.asyncsql.MySQLClient;
 import io.vertx.ext.sql.ResultSet;
 import io.vertx.ext.sql.SQLClient;
 import io.vertx.ext.sql.SQLConnection;
-import io.vertx.ext.sql.SQLRowStream;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.PriorityQueue;
+import java.util.Scanner;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -175,61 +177,90 @@ public class MySQLVerticle extends AbstractVerticle {
             context.response().end(header);
             return;
         }
+
+        long userId;
+        int n;
+
+        try {
+            userId = Long.parseLong(userIdStr);
+            n = Integer.parseInt(nStr);
+        } catch (NumberFormatException e) {
+            context.response().end(header);
+            return;
+        }
+
+        if (n <= 0) {
+            context.response().end(header);
+            return;
+        }
+
         mySQLClient.getConnection(car -> {
             if (car.succeeded()) {
                 SQLConnection connection = car.result();
 
-                final Long userId = Long.parseLong(userIdStr);
-                final int n = Integer.parseInt(nStr);
+                final JsonArray params = new JsonArray().add(userId);
 
-                final JsonArray params = new JsonArray().add(userId).add(userId);
-
-                connection.queryStreamWithParams(query2SQL, params, res -> {
+                connection.queryWithParams(query2SQL, params, res -> {
                     connection.close();
                     if (res.succeeded()) {
-                        ArrayList<ContactUser> contacts = new ArrayList<>();
-                        SQLRowStream sqlRowStream = res.result();
-                        sqlRowStream
-                                .resultSetClosedHandler(v -> {
-                                    sqlRowStream.moreResults();
-                                })
-                                .handler(row -> {
-                                    Long uid = row.getLong(0);
-                                    String text = row.getString(1);
-                                    double intimacyScore = row.getDouble(2);
-                                    String screenName = row.getString(3);
-                                    String desc = row.getString(4);
-                                    Long createdAt = row.getLong(5);
-                                    if (contacts.isEmpty() ||
-                                            !uid.equals(contacts.get(contacts.size() - 1).getUserId())) {
-                                        contacts.add(new ContactUser(uid, screenName,
-                                                desc, intimacyScore));
-                                    }
-                                    contacts.get(contacts.size() - 1).addTweet(text, phrase, createdAt);
-                                })
-                                .endHandler(v -> {
-                                    // Sort contacts
-                                    PriorityQueue<ContactUser> sortedContacts = new PriorityQueue<>();
-                                    for (ContactUser cu : contacts) {
-                                        sortedContacts.add(cu);
-                                        if (sortedContacts.size() > n) {
-                                            sortedContacts.poll();
-                                        }
-                                    }
-                                    ArrayList<ContactUser> reversedContacts = new ArrayList<>();
-                                    while (!sortedContacts.isEmpty()) {
-                                        reversedContacts.add(0, sortedContacts.poll());
-                                    }
-                                    StringBuilder respStringBuilder = new StringBuilder();
-                                    for (ContactUser contactUser : reversedContacts) {
-                                        respStringBuilder.append(String.format("%s\t%s\t%s\n",
-                                                contactUser.getUserName(),
-                                                contactUser.getUserDescription(),
-                                                contactUser.getTweetText()));
-                                    }
-                                    respStringBuilder.deleteCharAt(respStringBuilder.length() - 1);
-                                    context.response().end(header + respStringBuilder);
-                                });
+                        PriorityQueue<ContactUser> sortedContacts = new PriorityQueue<>();
+                        ResultSet resultSet = res.result();
+
+                        if (resultSet.getNumRows() == 0) {
+                            context.response().end(header);
+                            return;
+                        }
+
+                        JsonObject row = resultSet.getRows().get(0);
+
+                        JsonArray uids = new JsonArray(row.getString("user2_ids"));
+                        List<List<String>> texts = new JsonArray(row.getString("texts")).getList();
+                        JsonArray screenNames = new JsonArray(row.getString("user2_screen_names"));
+                        JsonArray descs = new JsonArray(row.getString("user2_descs"));
+                        JsonArray intimacyScores = new JsonArray(row.getString("intimacy_scores"));
+                        List<List<Long>> createdAts = new JsonArray(row.getString("created_ats")).getList();
+                        int userNum = uids.size();
+                        for (int i = 0; i < userNum; ++i) {
+                            long uid = uids.getLong(i);
+                            String screenName = screenNames.getString(i);
+                            String desc = descs.getString(i);
+                            double intimacyScore = intimacyScores.getDouble(i);
+                            List<String> uTexts = texts.get(i);
+                            List<Long> uCreatedAts = createdAts.get(i);
+                            int textNum = uTexts.size();
+
+                            if (screenName.equals("$NULL$")) {
+                                screenName = null;
+                            }
+                            if (desc.equals("$NULL$")) {
+                                desc = null;
+                            }
+                            ContactUser user = new ContactUser(uid, screenName, desc, intimacyScore);
+                            for (int j = 0; j < textNum; ++j) {
+                                String text = uTexts.get(j);
+                                String stringToConvert = String.valueOf(uCreatedAts.get(j));
+                                Long createdAt = Long.parseLong(stringToConvert);
+                                user.addTweet(text, phrase, createdAt);
+                            }
+                            sortedContacts.add(user);
+                            if (sortedContacts.size() > n) {
+                                sortedContacts.poll();
+                            }
+                        }
+
+                        ArrayList<ContactUser> reversedContacts = new ArrayList<>();
+                        while (!sortedContacts.isEmpty()) {
+                            reversedContacts.add(0, sortedContacts.poll());
+                        }
+                        StringBuilder respStringBuilder = new StringBuilder();
+                        for (ContactUser contactUser : reversedContacts) {
+                            respStringBuilder.append(String.format("%s\t%s\t%s\n",
+                                    contactUser.getUserName(),
+                                    contactUser.getUserDescription(),
+                                    contactUser.getTweetText()));
+                        }
+                        respStringBuilder.deleteCharAt(respStringBuilder.length() - 1);
+                        context.response().end(header + respStringBuilder);
                     } else {
                         LOGGER.error("Could not get query", res.cause());
                         context.fail(res.cause());
@@ -258,16 +289,39 @@ public class MySQLVerticle extends AbstractVerticle {
             context.response().end(header);
             return;
         }
+
+        final long uidStart;
+        final long uidEnd;
+        final long timeStart;
+        final long timeEnd;
+        final int n1;
+        final int n2;
+
+        try {
+            uidStart = Long.parseLong(uidStartStr);
+            uidEnd = Long.parseLong(uidEndStr);
+            timeStart = Long.parseLong(timeStartStr);
+            timeEnd = Long.parseLong(timeEndStr);
+            n1 = Integer.parseInt(n1Str);
+            n2 = Integer.parseInt(n2Str);
+        } catch (NumberFormatException e) {
+            context.response().end(header);
+            return;
+        }
+
+        if (n1 <= 0 || n2 < 0) {
+            context.response().end(header);
+            return;
+        }
+
+        if (uidStart > uidEnd || timeStart > timeEnd) {
+            context.response().end(header);
+            return;
+        }
+
         mySQLClient.getConnection(car -> {
             if (car.succeeded()) {
                 SQLConnection connection = car.result();
-
-                final Long uidStart = Long.parseLong(uidStartStr);
-                final Long uidEnd = Long.parseLong(uidEndStr);
-                final Long timeStart = Long.parseLong(timeStartStr);
-                final Long timeEnd = Long.parseLong(timeEndStr);
-                final int n1 = Integer.parseInt(n1Str);
-                final int n2 = Integer.parseInt(n2Str);
 
                 final JsonArray params = new JsonArray()
                         .add(uidStart).add(uidEnd)

@@ -45,11 +45,6 @@ object LoadUserIntimacyTable {
     // create statement
     val stmt = connection.createStatement()
 
-    // create schema
-    stmt.executeUpdate("drop table if exists topic_word")
-
-    stmt.executeUpdate("drop table if exists user_intimacy")
-
     // set connection properties
     val connectionProperties = new Properties()
     connectionProperties.put("user", s"$jdbcUsername")
@@ -93,6 +88,7 @@ object LoadUserIntimacyTable {
       }.toDF
 
     // create table
+    stmt.executeUpdate("drop table if exists user_intimacy")
     stmt.executeUpdate("create table user_intimacy (user1_id bigint, user2_ids mediumtext, texts mediumtext, created_ats mediumtext, intimacy_scores mediumtext, user2_descs mediumtext, user2_screen_names mediumtext, primary key (user1_id))")
 
     groupedDF.write.mode(SaveMode.Append)

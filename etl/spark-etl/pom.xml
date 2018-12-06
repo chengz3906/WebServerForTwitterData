@@ -79,7 +79,7 @@
                                 </filter>
                             </filters>
                             <minimizeJar>false</minimizeJar>
-                            <finalName>project_spark</finalName>
+                            <finalName>phase3_spark_etl</finalName>
                         </configuration>
                     </execution>
                 </executions>

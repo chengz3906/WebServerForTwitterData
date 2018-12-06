@@ -1,21 +1,21 @@
 package cmu.cc.team.spongebob.spark_etl
 
-import org.apache.spark.sql.{SaveMode, SparkSession}
 import java.sql.DriverManager
 import java.util.Properties
 
+import org.apache.spark.sql.{SaveMode, SparkSession}
 
-object LoadMySQL {
+
+object LoadTopicWordTable {
   def main(args: Array[String]): Unit = {
     val jdbcHostname = args(0)
     val topicWordsPath = args(1)
-    val userIntimacyPath = args(2)
 
     // TODO put credentials in a config file
     val jdbcPort = "3306"
     val jdbcDatabase = "twitter_analytics"
-    val jdbcUsername = "spongebob"
-    val jdbcPassword = "15619phase3"
+    val jdbcUsername = "*****"
+    val jdbcPassword = "*****"
 
     val jdbcUrl =s"jdbc:mysql://$jdbcHostname:$jdbcPort/$jdbcDatabase"
 
@@ -31,10 +31,7 @@ object LoadMySQL {
 
     // create schema
     stmt.executeUpdate("drop table if exists topic_word")
-    stmt.executeUpdate("create table topic_word (tweet_id bigint, user_id bigint, created_at bigint, text text, censored_text text, impact_score bigint, _gid int, primary key (user_id, created_at, _gid))")
-
-    stmt.executeUpdate("drop table if exists user_intimacy")
-    stmt.executeUpdate("create table user_intimacy (user1_id bigint, user2_id bigint, tweet_text text, created_at bigint, intimacy_score double, user1_desc text, user2_desc text, user1_screen_name text, user2_screen_name text, _gid int, primary key (user1_id, _gid))")
+    stmt.executeUpdate("create table topic_word (tweet_id bigint, user_id bigint, created_at bigint, text text, impact_score bigint, _gid int, primary key (user_id, created_at, _gid))")
 
     // set connection properties
     val connectionProperties = new Properties()
@@ -50,23 +47,12 @@ object LoadMySQL {
 
     // load tables
     val spark = SparkSession.builder().getOrCreate()
-    val topicWordsDF = spark.read.parquet(topicWordsPath)
-    val userIntimacyDF = spark.read.parquet(userIntimacyPath)
+    val topicWordsDF = spark.read.parquet(topicWordsPath).drop("censored_text")
+
     topicWordsDF.write.mode(SaveMode.Append)
       .option("charSet", "utf8mb4")
       .option("useUnicode", "true")
       .jdbc(jdbcUrl, "topic_word", connectionProperties)
-    userIntimacyDF.write.mode(SaveMode.Append)
-      .option("charSet", "utf8mb4")
-      .option("useUnicode", "true")
-      .jdbc(jdbcUrl, "user_intimacy", connectionProperties)
-
-    // create indexes
-    /*
-    stmt.executeUpdate("create index user_id_created_at_ind on topic_word (user_id, created_at)")
-    stmt.executeUpdate("create index user1_id_ind  on user_intimacy (user1_id)")
-    stmt.executeUpdate("create index user2_id_ind  on user_intimacy (user2_id)")
-    */
 
     stmt.close()
     connection.close()
